@@ -1,0 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { font-family: 'DM Sans', sans-serif; }
+}
+
+@layer components {
+  .btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 cursor-pointer; border: none; }
+  .btn-primary { @apply bg-[#1a6b4a] text-white hover:bg-[#2d8a5e]; }
+  .btn-outline { @apply bg-white text-[#1a6b4a] border border-[#1a6b4a] hover:bg-[#e8f5ee]; }
+  .btn-gold { @apply bg-[#c8a84b] text-white hover:bg-[#b8943a]; }
+  .btn-danger { @apply bg-red-50 text-red-700 border border-red-300 hover:bg-red-100; }
+  .btn-sm { @apply px-3 py-1.5 text-xs; }
+  .card { @apply bg-white rounded-xl border border-gray-200 p-6; }
+  .form-input { @apply w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a6b4a] transition-colors; }
+  .form-select { @apply w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a6b4a] bg-white; }
+  .form-textarea { @apply w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#1a6b4a] resize-y min-h-[80px]; }
+  .badge { @apply inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium; }
+}
