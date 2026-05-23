@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
@@ -6,60 +6,38 @@ const AuthContext = createContext({})
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const initDone = useRef(false)
 
   useEffect(() => {
-    let mounted = true
-
-    async function initAuth() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (mounted) {
-          setUser(session?.user ?? null)
-          setLoading(false)
-        }
-      } catch {
-        if (mounted) {
-          setUser(null)
-          setLoading(false)
-        }
-      }
-    }
-
-    initAuth()
-
+    // Listener PRIMUL - înainte de getSession
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (!mounted) return
-      if (event === 'SIGNED_IN' && session) {
-        setUser(session.user)
-        setLoading(false)
-      } else if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT') {
         setUser(null)
-        setLoading(false)
-      } else if (event === 'TOKEN_REFRESHED' && session) {
+      } else if (session?.user) {
         setUser(session.user)
-      } else if (event === 'INITIAL_SESSION') {
-        setUser(session?.user ?? null)
+      }
+      if (initDone.current) {
         setLoading(false)
       }
     })
 
-    return () => {
-      mounted = false
-      subscription.unsubscribe()
-    }
+    // Apoi getSession
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+      setLoading(false)
+      initDone.current = true
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  async function signIn(email, password) {
-    return supabase.auth.signInWithPassword({ email, password })
-  }
-
-  async function signOut() {
-    await supabase.auth.signOut()
-    setUser(null)
-  }
-
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{
+      user,
+      loading,
+      signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
+      signOut: async () => { await supabase.auth.signOut(); setUser(null) }
+    }}>
       {children}
     </AuthContext.Provider>
   )

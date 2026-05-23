@@ -13,12 +13,29 @@ import InrolarePublica from './pages/InrolarePublica'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
+
+  // Cât timp încarcă, arată spinner — NU redirecta
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin" style={{ borderTopColor: '#1a6b4a' }} />
+      <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin"
+        style={{ borderTopColor: '#1a6b4a' }} />
     </div>
   )
+
   if (!user) return <Navigate to="/login" replace />
+  return children
+}
+
+function PublicRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-gray-200 rounded-full animate-spin"
+        style={{ borderTopColor: '#1a6b4a' }} />
+    </div>
+  )
+  // Dacă deja logat, trimite la dashboard
+  if (user) return <Navigate to="/" replace />
   return children
 }
 
@@ -27,11 +44,8 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Pagini publice */}
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
           <Route path="/inrolare-voluntar" element={<InrolarePublica />} />
-
-          {/* Pagini protejate */}
           <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="voluntari"  element={<Voluntari />} />
