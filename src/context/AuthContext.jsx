@@ -1,21 +1,16 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState } from 'react'
 
 const AuthContext = createContext({})
 
-const USERS = [
-  { email: 'asociatia.sansa2010@gmail.com', password: 'Sansa2010!', nume: 'Spiridon Mihaela-Iulia', rol: 'admin' }
-]
-
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem('sansa_user')) } catch { return null }
+    try { return JSON.parse(sessionStorage.getItem('sansa_user')) } 
+    catch { return null }
   })
-  const [loading, setLoading] = useState(false)
 
   function signIn(email, password) {
-    const found = USERS.find(u => u.email === email && u.password === password)
-    if (found) {
-      const u = { email: found.email, nume: found.nume, rol: found.rol }
+    if (email === 'asociatia.sansa2010@gmail.com' && password === 'Sansa2010!') {
+      const u = { email, nume: 'Spiridon Mihaela-Iulia', rol: 'admin' }
       sessionStorage.setItem('sansa_user', JSON.stringify(u))
       setUser(u)
       return { data: { user: u }, error: null }
@@ -29,7 +24,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading: false, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )
