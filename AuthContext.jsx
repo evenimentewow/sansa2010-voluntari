@@ -8,17 +8,45 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
+    let mounted = true
+
+    async function initAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
+      } catch {
+        if (mounted) {
+          setUser(null)
+          setLoading(false)
+        }
+      }
+    }
+
+    initAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!mounted) return
+      if (event === 'SIGNED_IN' && session) {
+        setUser(session.user)
+        setLoading(false)
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+        setLoading(false)
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        setUser(session.user)
+      } else if (event === 'INITIAL_SESSION') {
+        setUser(session?.user ?? null)
+        setLoading(false)
+      }
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   async function signIn(email, password) {
@@ -26,7 +54,8 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
-    return supabase.auth.signOut()
+    await supabase.auth.signOut()
+    setUser(null)
   }
 
   return (
