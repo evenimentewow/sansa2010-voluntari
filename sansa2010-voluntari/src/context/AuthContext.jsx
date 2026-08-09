@@ -1,48 +1,36 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { createContext, useContext, useState } from 'react'
 
 const AuthContext = createContext({})
 
+const USERS = [
+  { email: 'asociatia.sansa2010@gmail.com', password: 'Sansa2010!', nume: 'Spiridon Mihaela-Iulia', rol: 'admin' },
+  { email: 'guest@sansa2010.ro', password: 'Guest2010!', nume: 'Utilizator Guest', rol: 'guest' },
+]
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user, setUser] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem('sansa_user')) } 
+    catch { return null }
+  })
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else setProfile(null)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  async function fetchProfile(userId) {
-    const { data } = await supabase
-      .from('utilizatori')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    setProfile(data)
+  function signIn(email, password) {
+    const found = USERS.find(u => u.email === email && u.password === password)
+    if (found) {
+      const u = { email: found.email, nume: found.nume, rol: found.rol }
+      sessionStorage.setItem('sansa_user', JSON.stringify(u))
+      setUser(u)
+      return { data: { user: u }, error: null }
+    }
+    return { data: null, error: { message: 'Email sau parolă incorecte.' } }
   }
 
-  async function signIn(email, password) {
-    return supabase.auth.signInWithPassword({ email, password })
-  }
-
-  async function signOut() {
-    return supabase.auth.signOut()
+  function signOut() {
+    sessionStorage.removeItem('sansa_user')
+    setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, loading: false, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   )
