@@ -2,21 +2,9 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PageHeader, Spinner, EmptyState, Badge } from '../components/ui'
-import { FileText, Printer, Plus } from 'lucide-react'
+import { Printer, Plus, UserCheck, Trash2 } from 'lucide-react'
 
-const ASOCIATIE = {
-  denumire: 'ASOCIATIA SANSA 2010',
-  cod_fiscal: '27772126',
-  reg: 'nr. 32/PJ/2010, Judecatoria Pascani',
-  sediu: 'Pascani, str. Gradinitei, nr. 22, bl. K4, ap.15, cod postal 705200',
-  cont: 'RO58RNCB0176160764990001',
-  banca: 'BCR Agentia Pascani',
-  reprezentant: 'Spiridon Mihaela Iulia',
-  calitate: 'presedinte',
-}
-
-function suma_in_litere(n) {
-  // Simplificat - afișează suma numeric formatat
+function suma_fmt(n) {
   return new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2 }).format(n)
 }
 
@@ -24,34 +12,61 @@ export default function Sponsorizari() {
   const { user } = useAuth()
   const isGuest = user?.rol === 'guest'
   const [sponsorizari, setSponsorizari] = useState([])
+  const [imputerniciti, setImputerniciti] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
+  const [showImp, setShowImp] = useState(false)
   const [saving, setSaving] = useState(false)
   const [preview, setPreview] = useState(null)
+  const [impNou, setImpNou] = useState({ nume: '', functie: 'imputernicit' })
   const [form, setForm] = useState({
     sponsor_denumire: '', sponsor_sediu: '', sponsor_reg_com: '', sponsor_cui: '',
     sponsor_cont: '', sponsor_banca: '', sponsor_reprezentant: '',
     sponsor_ci_serie: '', sponsor_ci_numar: '', sponsor_cnp: '', sponsor_calitate: 'administrator',
     suma: '', data_limita: '', are_chitanta: false,
+    semnatar1_id: '', semnatar2_id: '',
   })
 
   useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
-    const { data } = await supabase.from('sponsorizari').select('*').order('numar', { ascending: false })
-    setSponsorizari(data || [])
+    const [{ data: sp }, { data: imp }] = await Promise.all([
+      supabase.from('sponsorizari').select('*').order('numar', { ascending: false }),
+      supabase.from('imputerniciti').select('*').eq('activ', true).order('created_at'),
+    ])
+    setSponsorizari(sp || [])
+    setImputerniciti(imp || [])
     setLoading(false)
   }
 
   function upd(f, v) { setForm(p => ({ ...p, [f]: v })) }
 
+  async function adaugaImputernicit() {
+    if (!impNou.nume) { alert('Completați numele'); return }
+    const { error } = await supabase.from('imputerniciti').insert(impNou)
+    if (error) { alert('Eroare: ' + error.message); return }
+    setImpNou({ nume: '', functie: 'imputernicit' })
+    fetchAll()
+  }
+
+  async function stergeImputernicit(id) {
+    if (!confirm('Dezactivezi această persoană împuternicită?')) return
+    await supabase.from('imputerniciti').update({ activ: false }).eq('id', id)
+    fetchAll()
+  }
+
   async function salveaza() {
     if (!form.sponsor_denumire || !form.suma) {
       alert('Completați cel puțin denumirea sponsorului și suma'); return
     }
+    if (!form.semnatar1_id) {
+      alert('Selectați cel puțin un semnatar din partea asociației'); return
+    }
     setSaving(true)
 
-    // Obține numărul următor de contract
+    const s1 = imputerniciti.find(i => i.id === form.semnatar1_id)
+    const s2 = form.semnatar2_id ? imputerniciti.find(i => i.id === form.semnatar2_id) : null
+
     const { data: nrData } = await supabase.rpc('next_numar_sponsorizare')
     const numar = nrData || 1
 
@@ -79,6 +94,10 @@ export default function Sponsorizari() {
       are_chitanta: form.are_chitanta,
       chitanta_numar,
       chitanta_data: form.are_chitanta ? new Date().toISOString().slice(0, 10) : null,
+      semnatar1_nume: s1?.nume || null,
+      semnatar1_functie: s1?.functie || null,
+      semnatar2_nume: s2?.nume || null,
+      semnatar2_functie: s2?.functie || null,
       introdus_de: user?.email || 'guest',
     }
 
@@ -92,6 +111,7 @@ export default function Sponsorizari() {
       sponsor_cont: '', sponsor_banca: '', sponsor_reprezentant: '',
       sponsor_ci_serie: '', sponsor_ci_numar: '', sponsor_cnp: '', sponsor_calitate: 'administrator',
       suma: '', data_limita: '', are_chitanta: false,
+      semnatar1_id: '', semnatar2_id: '',
     })
     fetchAll()
     setPreview(data)
@@ -107,13 +127,48 @@ export default function Sponsorizari() {
         title="Contracte de sponsorizare"
         subtitle={`${sponsorizari.length} contracte emise`}
         actions={
-          <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowForm(!showForm)}>
-            <Plus size={14} /> Contract nou
-          </button>
+          <>
+            {!isGuest && (
+              <button className="btn btn-outline btn-sm gap-1.5" onClick={() => setShowImp(!showImp)}>
+                <UserCheck size={14} /> Împuterniciți
+              </button>
+            )}
+            <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowForm(!showForm)}>
+              <Plus size={14} /> Contract nou
+            </button>
+          </>
         }
       />
 
       <div className="p-4 sm:p-8 space-y-6">
+
+        {/* Gestiune împuterniciți (doar admin) */}
+        {showImp && !isGuest && (
+          <div className="card" style={{ borderColor: '#3b82f6', borderWidth: 2 }}>
+            <div className="card-title">Persoane împuternicite cu drept de semnătură</div>
+            <p className="text-sm text-gray-400 mb-4">Aceste persoane pot semna contracte de sponsorizare din partea asociației</p>
+
+            <div className="flex flex-col sm:flex-row gap-3 mb-5">
+              <input className="form-input flex-1" placeholder="Nume și prenume" value={impNou.nume} onChange={e => setImpNou(p => ({ ...p, nume: e.target.value }))} />
+              <input className="form-input flex-1" placeholder="Funcție (ex: împuternicit, vicepreședinte)" value={impNou.functie} onChange={e => setImpNou(p => ({ ...p, functie: e.target.value }))} />
+              <button className="btn btn-primary" onClick={adaugaImputernicit}>+ Adaugă</button>
+            </div>
+
+            <div className="space-y-2">
+              {imputerniciti.map(i => (
+                <div key={i.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200">
+                  <div>
+                    <div className="font-medium text-sm">{i.nume}</div>
+                    <div className="text-xs text-gray-400">{i.functie}</div>
+                  </div>
+                  <button className="btn btn-danger btn-sm" onClick={() => stergeImputernicit(i.id)}>
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Formular contract nou */}
         {showForm && (
@@ -147,12 +202,8 @@ export default function Sponsorizari() {
                 <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Banca</label>
                 <input className="form-input" value={form.sponsor_banca} onChange={e => upd('sponsor_banca', e.target.value)} placeholder="Ex: BCR Pașcani" />
               </div>
-            </div>
-
-            <div className="text-xs font-bold uppercase tracking-widest text-green-700 border-b-2 border-green-100 pb-1.5 mb-4 mt-6">Reprezentant legal</div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Nume și prenume</label>
+                <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Reprezentant legal</label>
                 <input className="form-input" value={form.sponsor_reprezentant} onChange={e => upd('sponsor_reprezentant', e.target.value)} placeholder="Numele reprezentantului" />
               </div>
               <div>
@@ -187,7 +238,30 @@ export default function Sponsorizari() {
               </div>
             </div>
 
-            <label className="flex items-center gap-3 p-4 mt-4 rounded-lg border-2 cursor-pointer transition-all"
+            <div className="text-xs font-bold uppercase tracking-widest text-green-700 border-b-2 border-green-100 pb-1.5 mb-4 mt-6">Semnatari din partea asociației</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Semnatar 1 <span className="text-red-500">*</span></label>
+                <select className="form-select" value={form.semnatar1_id} onChange={e => upd('semnatar1_id', e.target.value)}>
+                  <option value="">— Selectează —</option>
+                  {imputerniciti.map(i => <option key={i.id} value={i.id}>{i.nume} ({i.functie})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Semnatar 2 (opțional)</label>
+                <select className="form-select" value={form.semnatar2_id} onChange={e => upd('semnatar2_id', e.target.value)}>
+                  <option value="">— Fără al doilea semnatar —</option>
+                  {imputerniciti.filter(i => i.id !== form.semnatar1_id).map(i => <option key={i.id} value={i.id}>{i.nume} ({i.functie})</option>)}
+                </select>
+              </div>
+            </div>
+            {imputerniciti.length === 0 && (
+              <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg mt-3">
+                ⚠️ Nu există persoane împuternicite. {isGuest ? 'Contactează administratorul pentru a adăuga.' : 'Apasă butonul "Împuterniciți" de sus pentru a adăuga.'}
+              </p>
+            )}
+
+            <label className="flex items-center gap-3 p-4 mt-5 rounded-lg border-2 cursor-pointer transition-all"
               style={{ borderColor: form.are_chitanta ? '#c8a84b' : '#e5e7eb', background: form.are_chitanta ? '#fdf6e3' : '#fff' }}>
               <input type="checkbox" className="w-5 h-5" style={{ accentColor: '#c8a84b' }}
                 checked={form.are_chitanta} onChange={e => upd('are_chitanta', e.target.checked)} />
@@ -211,27 +285,47 @@ export default function Sponsorizari() {
           <div className="card" style={{ borderColor: '#c8a84b', borderWidth: 2 }}>
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="card-title">✅ Contract nr. {preview.numar} generat</div>
-                <p className="text-sm text-gray-400">{preview.sponsor_denumire} · {suma_in_litere(preview.suma)} RON</p>
+                <div className="card-title">Contract nr. {preview.numar}</div>
+                <p className="text-sm text-gray-400">{preview.sponsor_denumire} · {suma_fmt(preview.suma)} RON</p>
               </div>
               <button className="text-gray-400 text-xl" style={{ background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setPreview(null)}>✕</button>
             </div>
 
-            <div className="rounded-xl border p-4 sm:p-6 text-xs sm:text-sm leading-relaxed" style={{ background: '#fffef7', borderColor: '#e8dfa0', fontFamily: 'Georgia, serif' }} id="contract-print">
+            <div className="rounded-xl border p-4 sm:p-6 text-xs sm:text-sm leading-relaxed" style={{ background: '#fffef7', borderColor: '#e8dfa0', fontFamily: 'Georgia, serif' }}>
               <p className="text-right">Nr. <strong>{preview.numar}</strong> / {azi(preview.data_contract)}</p>
               <p className="text-center font-bold text-base sm:text-lg my-4">CONTRACT DE SPONSORIZARE</p>
               <p><strong>{preview.sponsor_denumire}</strong>, cu sediul în {preview.sponsor_sediu || '—'}, înregistrată la Registrul Comerțului sub nr. {preview.sponsor_reg_com || '—'}, cod unic de înregistrare {preview.sponsor_cui || '—'}, având contul nr. {preview.sponsor_cont || '—'} deschis la {preview.sponsor_banca || '—'}, reprezentată de către {preview.sponsor_reprezentant || '—'}, legitimat cu CI seria {preview.sponsor_ci_serie || '—'}, nr {preview.sponsor_ci_numar || '—'}, CNP {preview.sponsor_cnp || '—'}, în calitate de {preview.sponsor_calitate || '—'}</p>
               <p className="mt-1">— denumită în continuare <strong>Sponsor</strong>, și</p>
-              <p className="mt-2"><strong>ASOCIATIA SANSA 2010</strong>, cod fiscal 27772126, înregistrată în Registrul Asociațiilor și Fundațiilor Judecătoria Pașcani cu nr. 32/PJ/2010, sediul în Pașcani, str. Grădiniței, nr. 22, bl. K4, ap.15, cod poștal 705200, contul nr. RO58RNCB0176160764990001, deschis la BCR Agenția Pașcani, reprezentată legal prin d-na Spiridon Mihaela Iulia, în calitate de președinte;</p>
+              <p className="mt-2"><strong>ASOCIATIA SANSA 2010</strong>, cod fiscal 27772126, înregistrată în Registrul Asociațiilor și Fundațiilor Judecătoria Pașcani cu nr. 32/PJ/2010, sediul în Pașcani, str. Grădiniței, nr. 22, bl. K4, ap.15, cod poștal 705200, contul nr. RO58RNCB0176160764990001, deschis la BCR Agenția Pașcani, reprezentată prin {preview.semnatar1_nume}{preview.semnatar1_functie ? `, în calitate de ${preview.semnatar1_functie}` : ''}{preview.semnatar2_nume ? ` și ${preview.semnatar2_nume}, în calitate de ${preview.semnatar2_functie}` : ''};</p>
               <p className="mt-1">— denumit în continuare <strong>Beneficiar</strong></p>
               <p className="mt-3"><strong>Art. 1. Obiectul Contractului</strong><br/>Obiectul prezentului contract îl constituie sponsorizarea activităților de voluntariat.</p>
-              <p className="mt-2"><strong>Art. 2. Obligațiile Sponsorului</strong><br/>Sponsorul se obligă să predea până la data de <strong>{preview.data_limita ? azi(preview.data_limita) : '—'}</strong> suma de <strong>{suma_in_litere(preview.suma)} RON</strong>.</p>
+              <p className="mt-2"><strong>Art. 2. Obligațiile Sponsorului</strong><br/>Sponsorul se obligă să predea până la data de <strong>{preview.data_limita ? azi(preview.data_limita) : '—'}</strong> suma de <strong>{suma_fmt(preview.suma)} RON</strong>.</p>
               <p className="mt-2"><strong>Art. 3. Obligațiile Beneficiarului</strong><br/>Beneficiarul se obligă să utilizeze resursele financiare în scopul enunțat la Art. 1, în condițiile Legii nr. 32/1994.</p>
               <p className="mt-2 text-gray-500 text-xs">[Art. 4-5: Durata contractului 30 zile, dispoziții finale conform template]</p>
               <p className="mt-3">Prezentul contract a fost încheiat astăzi, <strong>{azi(preview.data_contract)}</strong>, în două (2) exemplare originale, în limba română.</p>
+
               <div className="grid grid-cols-2 gap-4 mt-6 text-center">
-                <div><strong>Sponsor,</strong><br/>{preview.sponsor_denumire}<br/>{preview.sponsor_reprezentant}<br/><br/>___________________</div>
-                <div><strong>Beneficiar,</strong><br/>ASOCIATIA SANSA 2010<br/>SPIRIDON MIHAELA<br/>Președinte<br/>___________________</div>
+                <div>
+                  <strong>Sponsor,</strong><br/>
+                  {preview.sponsor_denumire}<br/>
+                  {preview.sponsor_reprezentant}<br/><br/>
+                  ___________________
+                </div>
+                <div>
+                  <strong>Beneficiar,</strong><br/>
+                  ASOCIATIA SANSA 2010<br/><br/>
+                  {preview.semnatar1_nume}<br/>
+                  <span className="text-xs">({preview.semnatar1_functie})</span><br/>
+                  ___________________
+                  {preview.semnatar2_nume && (
+                    <>
+                      <br/><br/>
+                      {preview.semnatar2_nume}<br/>
+                      <span className="text-xs">({preview.semnatar2_functie})</span><br/>
+                      ___________________
+                    </>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -239,9 +333,9 @@ export default function Sponsorizari() {
               <div className="rounded-xl border-2 border-dashed p-4 sm:p-6 mt-4 text-sm" style={{ background: '#fdf6e3', borderColor: '#c8a84b' }}>
                 <p className="text-center font-bold mb-3">CHITANȚA Nr. {preview.chitanta_numar} / {azi(preview.chitanta_data)}</p>
                 <p>Am primit de la <strong>{preview.sponsor_denumire}</strong> (CUI {preview.sponsor_cui || '—'})</p>
-                <p>suma de <strong>{suma_in_litere(preview.suma)} RON</strong></p>
+                <p>suma de <strong>{suma_fmt(preview.suma)} RON</strong></p>
                 <p>reprezentând: sponsorizare conform contract nr. {preview.numar} din {azi(preview.data_contract)}</p>
-                <p className="mt-4 text-right">Casier / Președinte,<br/>Spiridon Mihaela Iulia<br/>___________________</p>
+                <p className="mt-4 text-right">Încasat,<br/>{preview.semnatar1_nume}<br/>___________________</p>
               </div>
             )}
 
@@ -260,15 +354,18 @@ export default function Sponsorizari() {
             ? <EmptyState icon="📄" title="Niciun contract emis" subtitle="Apasă 'Contract nou' pentru a genera primul contract de sponsorizare." />
             : (
               <div className="overflow-x-auto mt-2">
-                <table className="tbl" style={{ minWidth: 600 }}>
-                  <thead><tr><th>Nr.</th><th>Data</th><th>Sponsor</th><th>Suma</th><th>Chitanță</th><th></th></tr></thead>
+                <table className="tbl" style={{ minWidth: 640 }}>
+                  <thead><tr><th>Nr.</th><th>Data</th><th>Sponsor</th><th>Suma</th><th>Semnatari</th><th>Chitanță</th><th></th></tr></thead>
                   <tbody>
                     {sponsorizari.map(s => (
                       <tr key={s.id}>
                         <td className="font-bold">#{s.numar}</td>
                         <td className="text-sm text-gray-500">{new Date(s.data_contract).toLocaleDateString('ro-RO')}</td>
                         <td className="font-medium text-sm">{s.sponsor_denumire}</td>
-                        <td className="font-semibold">{suma_in_litere(s.suma)} RON</td>
+                        <td className="font-semibold">{suma_fmt(s.suma)} RON</td>
+                        <td className="text-xs text-gray-500">
+                          {s.semnatar1_nume}{s.semnatar2_nume ? ` + ${s.semnatar2_nume}` : ''}
+                        </td>
                         <td>
                           {s.are_chitanta
                             ? <Badge variant="gold">🧾 Nr. {s.chitanta_numar}</Badge>
