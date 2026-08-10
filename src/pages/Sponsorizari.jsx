@@ -2,22 +2,18 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { PageHeader, Spinner, EmptyState, Badge } from '../components/ui'
-import { Printer, Plus, UserCheck, Trash2, Download, Share2, Hash, MessageCircle, Mail } from 'lucide-react'
+import { Printer, Plus, UserCheck, Trash2, Download, Share2, Hash, MessageCircle, Mail, Pencil, ShieldAlert } from 'lucide-react'
 
 const AN = new Date().getFullYear()
 
-function fmt(n) {
-  return new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2 }).format(n || 0)
-}
-function dataRo(d) {
-  return new Date(d || Date.now()).toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' })
-}
-function nrAfisat(prefix, an, numar) {
-  const p = prefix ? `${prefix} ` : ''
-  return `${p}${String(numar).padStart(3, '0')}/${an || AN}`
-}
+const fmt = n => new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2 }).format(n || 0)
+const dataRo = d => new Date(d || Date.now()).toLocaleDateString('ro-RO', { day: '2-digit', month: 'long', year: 'numeric' })
 
-// suma in litere (RON)
+// Seria = PREFIX + AN  (ex: SNS2026),  numarul = 001
+const serieCod = (prefix, an) => `${(prefix || 'SNS').toUpperCase()}${an || AN}`
+const nrDoc = numar => String(numar || 0).padStart(3, '0')
+const docFull = (prefix, an, numar) => `${serieCod(prefix, an)} nr. ${nrDoc(numar)}`
+
 const UNI = ['zero','unu','doi','trei','patru','cinci','sase','sapte','opt','noua','zece','unsprezece','doisprezece','treisprezece','paisprezece','cincisprezece','saisprezece','saptesprezece','optsprezece','nouasprezece']
 const ZECI = ['','','douazeci','treizeci','patruzeci','cincizeci','saizeci','saptezeci','optzeci','nouazeci']
 function subMie(n) {
@@ -52,6 +48,7 @@ const GOL = {
 
 export default function Sponsorizari() {
   const { user } = useAuth()
+  const isAdmin = user?.rol === 'admin'
   const isGuest = user?.rol === 'guest'
 
   const [sponsorizari, setSponsorizari] = useState([])
@@ -63,6 +60,7 @@ export default function Sponsorizari() {
   const [showSerii, setShowSerii] = useState(false)
   const [saving, setSaving] = useState(false)
   const [preview, setPreview] = useState(null)
+  const [editId, setEditId] = useState(null)          // godmode: contract in editare
   const [impNou, setImpNou] = useState({ nume: '', functie: 'imputernicit' })
   const [form, setForm] = useState(GOL)
 
@@ -98,11 +96,43 @@ export default function Sponsorizari() {
     setImpNou({ nume: '', functie: 'imputernicit' })
     fetchAll()
   }
-
   async function stergeImputernicit(id) {
     if (!confirm('Dezactivezi această persoană?')) return
     await supabase.from('imputerniciti').update({ activ: false }).eq('id', id)
     fetchAll()
+  }
+
+  // ── GODMODE: editare / stergere ────────────────────────────────
+  function deschideEditare(c) {
+    const s1 = imputerniciti.find(i => i.nume === c.semnatar1_nume)
+    const s2 = imputerniciti.find(i => i.nume === c.semnatar2_nume)
+    setForm({
+      sponsor_denumire: c.sponsor_denumire || '', sponsor_sediu: c.sponsor_sediu || '',
+      sponsor_reg_com: c.sponsor_reg_com || '', sponsor_cui: c.sponsor_cui || '',
+      sponsor_cont: c.sponsor_cont || '', sponsor_banca: c.sponsor_banca || '',
+      sponsor_reprezentant: c.sponsor_reprezentant || '', sponsor_ci_serie: c.sponsor_ci_serie || '',
+      sponsor_ci_numar: c.sponsor_ci_numar || '', sponsor_cnp: c.sponsor_cnp || '',
+      sponsor_calitate: c.sponsor_calitate || '', suma: c.suma || '',
+      data_limita: c.data_limita || '', are_chitanta: !!c.are_chitanta,
+      semnatar1_id: s1?.id || '', semnatar2_id: s2?.id || '',
+      numar: c.numar, data_contract: c.data_contract,
+    })
+    setEditId(c.id)
+    setShowForm(true)
+    setPreview(null)
+    window.scrollTo(0, 0)
+  }
+
+  async function stergeContract(c) {
+    if (!confirm(`ȘTERGERE DEFINITIVĂ\n\nContract ${docFull(c.serie_prefix, c.serie_an, c.numar)} — ${c.sponsor_denumire}\nSuma: ${fmt(c.suma)} RON\n\nAceastă operațiune nu poate fi anulată. Continui?`)) return
+    const { error } = await supabase.from('sponsorizari').delete().eq('id', c.id)
+    if (error) return alert('Eroare: ' + error.message)
+    if (preview?.id === c.id) setPreview(null)
+    fetchAll()
+  }
+
+  function anuleazaForm() {
+    setShowForm(false); setEditId(null); setForm(GOL)
   }
 
   async function salveaza() {
@@ -113,86 +143,85 @@ export default function Sponsorizari() {
     const s1 = imputerniciti.find(i => i.id === form.semnatar1_id)
     const s2 = form.semnatar2_id ? imputerniciti.find(i => i.id === form.semnatar2_id) : null
 
-    const { data: nrData } = await supabase.rpc('next_numar_sponsorizare')
-    const startC = serieContract?.numar_start || 1
-    const numar = Math.max(nrData || 1, startC)
+    const comun = {
+      sponsor_denumire: form.sponsor_denumire, sponsor_sediu: form.sponsor_sediu,
+      sponsor_reg_com: form.sponsor_reg_com, sponsor_cui: form.sponsor_cui,
+      sponsor_cont: form.sponsor_cont, sponsor_banca: form.sponsor_banca,
+      sponsor_reprezentant: form.sponsor_reprezentant, sponsor_ci_serie: form.sponsor_ci_serie,
+      sponsor_ci_numar: form.sponsor_ci_numar, sponsor_cnp: form.sponsor_cnp,
+      sponsor_calitate: form.sponsor_calitate, suma: parseFloat(form.suma),
+      data_limita: form.data_limita || null, are_chitanta: form.are_chitanta,
+      semnatar1_nume: s1?.nume || null, semnatar1_functie: s1?.functie || null,
+      semnatar2_nume: s2?.nume || null, semnatar2_functie: s2?.functie || null,
+    }
 
+    // MODIFICARE (godmode)
+    if (editId) {
+      const orig = sponsorizari.find(s => s.id === editId)
+      let patch = { ...comun }
+      if (form.are_chitanta && !orig.chitanta_numar) {
+        const { data: chData } = await supabase.rpc('next_numar_chitanta')
+        patch.chitanta_numar = Math.max(chData || 1, serieChitanta?.numar_start || 1)
+        patch.chitanta_prefix = serieChitanta?.prefix || ''
+        patch.chitanta_data = new Date().toISOString().slice(0, 10)
+      }
+      if (!form.are_chitanta) {
+        patch.chitanta_numar = null; patch.chitanta_data = null
+      }
+      const { data, error } = await supabase.from('sponsorizari').update(patch).eq('id', editId).select().single()
+      if (error) { alert('Eroare: ' + error.message); setSaving(false); return }
+      setSaving(false); anuleazaForm(); fetchAll(); setPreview(data)
+      return
+    }
+
+    // CONTRACT NOU
+    const { data: nrData } = await supabase.rpc('next_numar_sponsorizare')
+    const numar = Math.max(nrData || 1, serieContract?.numar_start || 1)
     let chitanta_numar = null
     if (form.are_chitanta) {
       const { data: chData } = await supabase.rpc('next_numar_chitanta')
-      const startCh = serieChitanta?.numar_start || 1
-      chitanta_numar = Math.max(chData || 1, startCh)
+      chitanta_numar = Math.max(chData || 1, serieChitanta?.numar_start || 1)
     }
 
     const payload = {
-      numar,
-      serie_prefix: serieContract?.prefix || '',
-      serie_an: AN,
-      chitanta_prefix: serieChitanta?.prefix || '',
-      sponsor_denumire: form.sponsor_denumire,
-      sponsor_sediu: form.sponsor_sediu,
-      sponsor_reg_com: form.sponsor_reg_com,
-      sponsor_cui: form.sponsor_cui,
-      sponsor_cont: form.sponsor_cont,
-      sponsor_banca: form.sponsor_banca,
-      sponsor_reprezentant: form.sponsor_reprezentant,
-      sponsor_ci_serie: form.sponsor_ci_serie,
-      sponsor_ci_numar: form.sponsor_ci_numar,
-      sponsor_cnp: form.sponsor_cnp,
-      sponsor_calitate: form.sponsor_calitate,
-      suma: parseFloat(form.suma),
-      data_limita: form.data_limita || null,
-      are_chitanta: form.are_chitanta,
+      ...comun, numar,
+      serie_prefix: serieContract?.prefix || 'SNS', serie_an: AN,
+      chitanta_prefix: serieChitanta?.prefix || 'CH',
       chitanta_numar,
       chitanta_data: form.are_chitanta ? new Date().toISOString().slice(0, 10) : null,
-      semnatar1_nume: s1?.nume || null,
-      semnatar1_functie: s1?.functie || null,
-      semnatar2_nume: s2?.nume || null,
-      semnatar2_functie: s2?.functie || null,
       introdus_de: user?.email || 'guest',
     }
 
     const { data, error } = await supabase.from('sponsorizari').insert(payload).select().single()
     if (error) { alert('Eroare: ' + error.message); setSaving(false); return }
-
-    setShowForm(false); setSaving(false); setForm(GOL)
-    fetchAll(); setPreview(data)
+    setSaving(false); anuleazaForm(); fetchAll(); setPreview(data)
   }
 
-  // ── Share / Download ───────────────────────────────────────────
-  function textContract(c) {
-    return `CONTRACT DE SPONSORIZARE nr. ${nrAfisat(c.serie_prefix, c.serie_an, c.numar)} din ${dataRo(c.data_contract)}
+  // ── Share ──────────────────────────────────────────────────────
+  const textContract = c => `CONTRACT DE SPONSORIZARE ${docFull(c.serie_prefix, c.serie_an, c.numar)} din ${dataRo(c.data_contract)}
 Sponsor: ${c.sponsor_denumire}${c.sponsor_cui ? ` (CUI ${c.sponsor_cui})` : ''}
 Beneficiar: ASOCIATIA SANSA 2010, CIF 27772126
-Suma: ${fmt(c.suma)} RON${c.data_limita ? `, termen de plată: ${dataRo(c.data_limita)}` : ''}
-Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nChitanța nr. ${nrAfisat(c.chitanta_prefix, c.serie_an, c.chitanta_numar)}` : ''}`
-  }
+Suma: ${fmt(c.suma)} RON${c.data_limita ? `, termen: ${dataRo(c.data_limita)}` : ''}
+Cont: RO58RNCB0176160764990001 (BCR Pascani)${c.are_chitanta ? `\nChitanta: ${docFull(c.chitanta_prefix, c.serie_an, c.chitanta_numar)}` : ''}`
 
   async function shareContract(c) {
     const text = textContract(c)
-    if (navigator.share) {
-      try { await navigator.share({ title: `Contract sponsorizare ${nrAfisat(c.serie_prefix, c.serie_an, c.numar)}`, text }) } catch {}
-    } else {
-      await navigator.clipboard.writeText(text)
-      alert('✅ Detaliile contractului au fost copiate. Le poți lipi în WhatsApp sau e-mail.')
-    }
+    if (navigator.share) { try { await navigator.share({ title: `Contract ${docFull(c.serie_prefix, c.serie_an, c.numar)}`, text }) } catch {} }
+    else { await navigator.clipboard.writeText(text); alert('Detaliile au fost copiate. Le poți lipi în WhatsApp sau e-mail.') }
   }
-  function shareWhatsapp(c) {
-    window.open(`https://wa.me/?text=${encodeURIComponent(textContract(c))}`, '_blank')
-  }
-  function shareEmail(c) {
-    const subject = `Contract de sponsorizare nr. ${nrAfisat(c.serie_prefix, c.serie_an, c.numar)}`
-    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(textContract(c))}`
-  }
+  const shareWhatsapp = c => window.open(`https://wa.me/?text=${encodeURIComponent(textContract(c))}`, '_blank')
+  const shareEmail = c => { window.location.href = `mailto:?subject=${encodeURIComponent(`Contract de sponsorizare ${docFull(c.serie_prefix, c.serie_an, c.numar)}`)}&body=${encodeURIComponent(textContract(c))}` }
 
   if (loading) return <><PageHeader title="Sponsorizări" /><Spinner /></>
+
+  const urmatorulNr = Math.max(...sponsorizari.map(s => s.numar || 0), (serieContract?.numar_start || 1) - 1) + 1
 
   return (
     <>
       <div className="no-print">
         <PageHeader
           title="Contracte de sponsorizare"
-          subtitle={`${sponsorizari.length} contracte emise · serie ${serieContract?.prefix || '—'} ${AN}`}
+          subtitle={`${sponsorizari.length} contracte · seria ${serieCod(serieContract?.prefix, AN)}`}
           actions={
             <>
               {!isGuest && (
@@ -205,7 +234,7 @@ Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nCh
                   </button>
                 </>
               )}
-              <button className="btn btn-primary btn-sm gap-1.5" onClick={() => setShowForm(!showForm)}>
+              <button className="btn btn-primary btn-sm gap-1.5" onClick={() => { anuleazaForm(); setShowForm(true) }}>
                 <Plus size={14} /> Contract nou
               </button>
             </>
@@ -219,27 +248,24 @@ Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nCh
         {showSerii && !isGuest && (
           <div className="card no-print" style={{ borderColor: '#3b82f6', borderWidth: 2 }}>
             <div className="card-title">Serii de numerotare — anul {AN}</div>
-            <p className="text-sm text-gray-400 mb-4">Prefixul apare pe document, iar numărul de start stabilește de la ce număr începe seria anuală.</p>
+            <p className="text-sm text-gray-400 mb-4">Seria se formează din prefix + an și apare în antetul documentului.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {[{ tip: 'contract', label: 'Contracte', s: serieContract }, { tip: 'chitanta', label: 'Chitanțe', s: serieChitanta }].map(({ tip, label, s }) => (
+              {[{ tip: 'contract', label: 'Contracte', s: serieContract, ex: 'SNS' }, { tip: 'chitanta', label: 'Chitanțe', s: serieChitanta, ex: 'CH' }].map(({ tip, label, s, ex }) => (
                 <div key={tip} className="p-4 rounded-lg border border-gray-200">
                   <div className="font-medium text-sm mb-3">{label}</div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Prefix</label>
-                      <input className="form-input" defaultValue={s?.prefix || ''} id={`pfx-${tip}`} placeholder="Ex: SP" />
+                      <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Prefix serie</label>
+                      <input className="form-input" defaultValue={s?.prefix || ex} id={`pfx-${tip}`} placeholder={ex} />
                     </div>
                     <div>
                       <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Număr start</label>
                       <input className="form-input" type="number" defaultValue={s?.numar_start || 1} id={`start-${tip}`} />
                     </div>
                   </div>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Exemplu: {nrAfisat(s?.prefix, AN, s?.numar_start || 1)}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-2">Va apărea: <strong>{docFull(s?.prefix || ex, AN, s?.numar_start || 1)}</strong></p>
                   <button className="btn btn-outline btn-sm mt-3" onClick={() => salveazaSerie(
-                    tip,
-                    document.getElementById(`pfx-${tip}`).value,
+                    tip, document.getElementById(`pfx-${tip}`).value,
                     parseInt(document.getElementById(`start-${tip}`).value) || 1
                   )}>Salvează seria</button>
                 </div>
@@ -252,8 +278,7 @@ Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nCh
         {showImp && !isGuest && (
           <div className="card no-print" style={{ borderColor: '#3b82f6', borderWidth: 2 }}>
             <div className="card-title">Persoane împuternicite cu drept de semnătură</div>
-            <p className="text-sm text-gray-400 mb-4">Pot semna contracte din partea asociației</p>
-            <div className="flex flex-col sm:flex-row gap-3 mb-5">
+            <div className="flex flex-col sm:flex-row gap-3 my-4">
               <input className="form-input flex-1" placeholder="Nume și prenume" value={impNou.nume} onChange={e => setImpNou(p => ({ ...p, nume: e.target.value }))} />
               <input className="form-input flex-1" placeholder="Funcție" value={impNou.functie} onChange={e => setImpNou(p => ({ ...p, functie: e.target.value }))} />
               <button className="btn btn-primary" onClick={adaugaImputernicit}>+ Adaugă</button>
@@ -274,10 +299,12 @@ Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nCh
 
         {/* FORMULAR */}
         {showForm && (
-          <div className="card no-print">
-            <div className="card-title">Contract nou</div>
+          <div className="card no-print" style={editId ? { borderColor: '#c8a84b', borderWidth: 2 } : undefined}>
+            <div className="card-title">{editId ? 'Modificare contract' : 'Contract nou'}</div>
             <p className="text-sm text-gray-400 mb-5">
-              Va primi numărul <strong>{nrAfisat(serieContract?.prefix, AN, Math.max(...sponsorizari.map(s => s.numar || 0), (serieContract?.numar_start || 1) - 1) + 1)}</strong>
+              {editId
+                ? <>Se modifică contractul <strong>{docFull(form.serie_prefix || serieContract?.prefix, AN, form.numar)}</strong> — numărul rămâne neschimbat</>
+                : <>Va primi numărul <strong>{docFull(serieContract?.prefix, AN, urmatorulNr)}</strong></>}
             </p>
 
             <div className="text-xs font-bold uppercase tracking-widest text-green-700 border-b-2 border-green-100 pb-1.5 mb-4">Date sponsor</div>
@@ -335,11 +362,11 @@ Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nCh
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Suma (RON) <span className="text-red-500">*</span></label>
                 <input className="form-input" type="number" step="0.01" value={form.suma} onChange={e => upd('suma', e.target.value)} />
-                {form.suma && <span className="text-xs text-gray-400 italic">{inLitere(form.suma)} lei</span>}
+                {form.suma ? <span className="text-xs text-gray-400 italic">{inLitere(form.suma)} lei</span> : null}
               </div>
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Data limită de plată</label>
-                <input className="form-input" type="date" value={form.data_limita} onChange={e => upd('data_limita', e.target.value)} />
+                <input className="form-input" type="date" value={form.data_limita || ''} onChange={e => upd('data_limita', e.target.value)} />
               </div>
             </div>
 
@@ -372,9 +399,9 @@ Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nCh
             </label>
 
             <div className="flex gap-3 mt-6">
-              <button className="btn btn-outline flex-1 justify-center" onClick={() => setShowForm(false)}>Anulează</button>
+              <button className="btn btn-outline flex-1 justify-center" onClick={anuleazaForm}>Anulează</button>
               <button className="btn btn-primary flex-1 justify-center" onClick={salveaza} disabled={saving}>
-                {saving ? '⏳ Se generează...' : '✓ Generează contractul'}
+                {saving ? '⏳ Se salvează...' : editId ? '✓ Salvează modificările' : '✓ Generează contractul'}
               </button>
             </div>
           </div>
@@ -384,31 +411,26 @@ Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nCh
         {preview && (
           <div>
             <div className="no-print flex flex-wrap items-center gap-2 mb-4">
-              <button className="btn btn-primary gap-2" onClick={() => window.print()}>
-                <Download size={14} /> Salvează PDF
-              </button>
-              <button className="btn btn-outline gap-2" onClick={() => window.print()}>
-                <Printer size={14} /> Tipărește
-              </button>
-              <button className="btn btn-outline gap-2" onClick={() => shareWhatsapp(preview)}>
-                <MessageCircle size={14} /> WhatsApp
-              </button>
-              <button className="btn btn-outline gap-2" onClick={() => shareEmail(preview)}>
-                <Mail size={14} /> E-mail
-              </button>
-              <button className="btn btn-outline gap-2" onClick={() => shareContract(preview)}>
-                <Share2 size={14} /> Distribuie
-              </button>
+              <button className="btn btn-primary gap-2" onClick={() => window.print()}><Download size={14} /> Salvează PDF</button>
+              <button className="btn btn-outline gap-2" onClick={() => window.print()}><Printer size={14} /> Tipărește</button>
+              <button className="btn btn-outline gap-2" onClick={() => shareWhatsapp(preview)}><MessageCircle size={14} /> WhatsApp</button>
+              <button className="btn btn-outline gap-2" onClick={() => shareEmail(preview)}><Mail size={14} /> E-mail</button>
+              <button className="btn btn-outline gap-2" onClick={() => shareContract(preview)}><Share2 size={14} /> Distribuie</button>
+              {isAdmin && (
+                <>
+                  <button className="btn btn-outline gap-2" onClick={() => deschideEditare(preview)}><Pencil size={14} /> Modifică</button>
+                  <button className="btn btn-danger gap-2" onClick={() => stergeContract(preview)}><Trash2 size={14} /> Șterge</button>
+                </>
+              )}
               <button className="btn btn-outline" onClick={() => setPreview(null)}>✕ Închide</button>
             </div>
-            <p className="no-print text-xs text-gray-400 mb-4">
-              Butonul Salvează PDF deschide fereastra de tipărire — alege <strong>Save as PDF</strong> ca destinație.
-            </p>
 
             <div id="print-area">
               {/* PAGINA 1 — CONTRACT */}
               <div className="doc-page">
-                <div className="doc-nr">Nr. <strong>{nrAfisat(preview.serie_prefix, preview.serie_an, preview.numar)}</strong> din {dataRo(preview.data_contract)}</div>
+                <div className="doc-nr">
+                  Seria <strong>{serieCod(preview.serie_prefix, preview.serie_an)}</strong> &nbsp; Nr. <strong>{nrDoc(preview.numar)}</strong> &nbsp;·&nbsp; {dataRo(preview.data_contract)}
+                </div>
                 <div className="doc-title">CONTRACT DE SPONSORIZARE</div>
 
                 <p><strong>{preview.sponsor_denumire}</strong>, cu sediul în {preview.sponsor_sediu || '__________'}, înregistrată la Registrul Comerțului sub nr. {preview.sponsor_reg_com || '__________'}, cod unic de înregistrare {preview.sponsor_cui || '__________'}, având contul nr. {preview.sponsor_cont || '__________'} deschis la {preview.sponsor_banca || '__________'}, reprezentată de către {preview.sponsor_reprezentant || '__________'}, legitimat cu CI seria {preview.sponsor_ci_serie || '__'} nr. {preview.sponsor_ci_numar || '______'}, CNP {preview.sponsor_cnp || '_____________'}, în calitate de {preview.sponsor_calitate || '__________'}, denumită în continuare <strong>Sponsor</strong>,</p>
@@ -467,23 +489,16 @@ Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nCh
 
                   <div className="doc-title" style={{ marginTop: 28 }}>CHITANȚĂ</div>
                   <div style={{ textAlign: 'center', marginTop: -12, marginBottom: 24, fontSize: '11pt' }}>
-                    Nr. <strong>{nrAfisat(preview.chitanta_prefix, preview.serie_an, preview.chitanta_numar)}</strong> din {dataRo(preview.chitanta_data)}
+                    Seria <strong>{serieCod(preview.chitanta_prefix, preview.serie_an)}</strong> &nbsp; Nr. <strong>{nrDoc(preview.chitanta_numar)}</strong> &nbsp;·&nbsp; {dataRo(preview.chitanta_data)}
                   </div>
 
                   <p>Am primit de la <strong>{preview.sponsor_denumire}</strong>{preview.sponsor_cui ? `, CUI ${preview.sponsor_cui}` : ''}{preview.sponsor_sediu ? `, cu sediul în ${preview.sponsor_sediu}` : ''}.</p>
                   <p>Suma de <strong>{fmt(preview.suma)} RON</strong>, adică <strong>{inLitere(preview.suma)} lei</strong>.</p>
-                  <p>Reprezentând: sponsorizare conform contractului nr. {nrAfisat(preview.serie_prefix, preview.serie_an, preview.numar)} din {dataRo(preview.data_contract)}.</p>
+                  <p>Reprezentând: sponsorizare conform contractului {docFull(preview.serie_prefix, preview.serie_an, preview.numar)} din {dataRo(preview.data_contract)}.</p>
 
-                  <div className="doc-sign" style={{ gridTemplateColumns: '1fr 1fr', marginTop: 60 }}>
-                    <div>
-                      <strong>Depunător</strong>
-                      <div className="line">semnătura</div>
-                    </div>
-                    <div>
-                      <strong>Casier</strong><br />
-                      {preview.semnatar1_nume}
-                      <div className="line">semnătura și ștampila</div>
-                    </div>
+                  <div className="doc-sign" style={{ marginTop: 60 }}>
+                    <div><strong>Depunător</strong><div className="line">semnătura</div></div>
+                    <div><strong>Casier</strong><br />{preview.semnatar1_nume}<div className="line">semnătura și ștampila</div></div>
                   </div>
                 </div>
               )}
@@ -493,26 +508,39 @@ Cont beneficiar: RO58RNCB0176160764990001 (BCR Pașcani)${c.are_chitanta ? `\nCh
 
         {/* REGISTRU */}
         <div className="card no-print">
-          <div className="card-title">Registru sponsorizări</div>
+          <div className="flex items-center justify-between">
+            <div className="card-title">Registru sponsorizări</div>
+            {isAdmin && (
+              <span className="text-xs flex items-center gap-1.5 px-2 py-1 rounded-md" style={{ background: '#fef3c7', color: '#92400e' }}>
+                <ShieldAlert size={12} /> mod administrator — modificare și ștergere active
+              </span>
+            )}
+          </div>
           {sponsorizari.length === 0
             ? <EmptyState icon="📄" title="Niciun contract emis" subtitle="Apasă butonul Contract nou pentru a genera primul contract." />
             : (
-              <div className="overflow-x-auto mt-2">
-                <table className="tbl" style={{ minWidth: 680 }}>
-                  <thead><tr><th>Număr</th><th>Data</th><th>Sponsor</th><th>Suma</th><th>Semnatari</th><th>Chitanță</th><th></th></tr></thead>
+              <div className="overflow-x-auto mt-3">
+                <table className="tbl" style={{ minWidth: 760 }}>
+                  <thead><tr><th>Serie / Nr.</th><th>Data</th><th>Sponsor</th><th>Suma</th><th>Semnatari</th><th>Chitanță</th><th></th></tr></thead>
                   <tbody>
                     {sponsorizari.map(s => (
                       <tr key={s.id}>
-                        <td className="font-bold text-sm">{nrAfisat(s.serie_prefix, s.serie_an, s.numar)}</td>
+                        <td className="text-sm"><strong>{serieCod(s.serie_prefix, s.serie_an)}</strong> / {nrDoc(s.numar)}</td>
                         <td className="text-sm text-gray-500">{new Date(s.data_contract).toLocaleDateString('ro-RO')}</td>
                         <td className="font-medium text-sm">{s.sponsor_denumire}</td>
                         <td className="font-semibold">{fmt(s.suma)} RON</td>
                         <td className="text-xs text-gray-500">{s.semnatar1_nume}{s.semnatar2_nume ? ` + ${s.semnatar2_nume}` : ''}</td>
-                        <td>{s.are_chitanta ? <Badge variant="gold">{nrAfisat(s.chitanta_prefix, s.serie_an, s.chitanta_numar)}</Badge> : <Badge variant="gray">—</Badge>}</td>
+                        <td>{s.are_chitanta ? <Badge variant="gold">{serieCod(s.chitanta_prefix, s.serie_an)}/{nrDoc(s.chitanta_numar)}</Badge> : <Badge variant="gray">—</Badge>}</td>
                         <td>
                           <div className="flex gap-1.5">
                             <button className="btn btn-outline btn-sm" onClick={() => { setPreview(s); window.scrollTo(0, 0) }}>Deschide</button>
-                            <button className="btn btn-outline btn-sm" onClick={() => shareWhatsapp(s)} title="Trimite pe WhatsApp"><MessageCircle size={13} /></button>
+                            <button className="btn btn-outline btn-sm" onClick={() => shareWhatsapp(s)} title="WhatsApp"><MessageCircle size={13} /></button>
+                            {isAdmin && (
+                              <>
+                                <button className="btn btn-outline btn-sm" onClick={() => deschideEditare(s)} title="Modifică"><Pencil size={13} /></button>
+                                <button className="btn btn-danger btn-sm" onClick={() => stergeContract(s)} title="Șterge"><Trash2 size={13} /></button>
+                              </>
+                            )}
                           </div>
                         </td>
                       </tr>
