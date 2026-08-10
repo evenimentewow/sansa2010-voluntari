@@ -1,0 +1,20 @@
+/* ===== Adaos: stampila si logo pe documente — la finalul src/index.css ===== */
+
+.stamp-wrap { position: relative; height: 0; }
+.stamp-img {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-30%) rotate(-8deg);
+  width: 105px;
+  opacity: .92;
+  pointer-events: none;
+}
+.doc-logo { width: 74px; display: block; margin: 0 auto 8px; }
+
+@media print {
+  .stamp-img, .doc-logo {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
