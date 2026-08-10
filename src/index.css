@@ -212,3 +212,70 @@
 @media (max-width: 900px) {
   .login-logo { width: 96px; height: 96px; }
 }
+/* ===== Panou administrare — la finalul src/index.css ===== */
+
+.admin-fab {
+  position: fixed; top: 14px; right: 18px; z-index: 25;
+  display: inline-flex; align-items: center; gap: 7px;
+  background: #fff; color: #1a6b4a;
+  border: 1px solid #cfe2d8; border-radius: 10px;
+  padding: 8px 13px; font-size: 13px; font-weight: 500;
+  cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  transition: all .15s;
+}
+.admin-fab:hover { background: #e8f5ee; border-color: #1a6b4a; }
+
+.admin-overlay {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(0,0,0,.5);
+  display: flex; align-items: center; justify-content: center; padding: 18px;
+}
+.admin-panel {
+  background: #fff; border-radius: 16px; width: 100%; max-width: 760px;
+  max-height: 90vh; display: flex; flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,.25); overflow: hidden;
+}
+.admin-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px; border-bottom: 1px solid #eef1ef;
+}
+.admin-x { background: none; border: none; color: #9aa5a0; cursor: pointer; padding: 4px; }
+.admin-tabs { display: flex; gap: 4px; padding: 12px 22px 0; border-bottom: 1px solid #eef1ef; }
+.admin-tab {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer;
+  padding: 9px 14px; font-size: 13.5px; font-weight: 500; color: #6b7c74;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.admin-tab.active { color: #1a6b4a; border-bottom-color: #1a6b4a; }
+.admin-body { padding: 20px 22px; overflow-y: auto; }
+
+.admin-user {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 14px; border: 1px solid #e5e7eb; border-radius: 10px;
+}
+.admin-rol { width: auto; padding: 6px 10px; font-size: 12.5px; }
+
+@media (max-width: 900px) {
+  .admin-fab { display: none; }
+  .admin-overlay { padding: 0; align-items: flex-end; }
+  .admin-panel { max-width: 100%; max-height: 92vh; border-radius: 16px 16px 0 0; }
+  .admin-user { flex-direction: column; align-items: stretch; }
+  .admin-user .flex { justify-content: flex-start; }
+  .mobile-topbar .ml-auto { margin-left: auto; }
+}
+
+/* ===== Camp observatii in registrul de sponsorizari ===== */
+.obs-input {
+  width: 100%; min-width: 150px;
+  border: 1px solid #e5e7eb; border-radius: 7px;
+  padding: 6px 9px; font-size: 12.5px; font-family: inherit; color: #374151;
+  background: #fafbfa; transition: all .15s;
+}
+.obs-input:focus { outline: none; border-color: #1a6b4a; background: #fff; }
+.obs-input::placeholder { color: #b6bfba; font-style: italic; }
+
+@media (max-width: 900px) {
+  .tbl td.obs-cell { display: block; text-align: left; }
+  .obs-input { margin-top: 4px; }
+}

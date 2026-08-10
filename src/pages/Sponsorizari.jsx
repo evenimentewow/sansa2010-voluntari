@@ -43,7 +43,7 @@ const GOL = {
   sponsor_denumire: '', sponsor_sediu: '', sponsor_reg_com: '', sponsor_cui: '',
   sponsor_cont: '', sponsor_banca: '', sponsor_reprezentant: '',
   sponsor_ci_serie: '', sponsor_ci_numar: '', sponsor_cnp: '', sponsor_calitate: 'administrator',
-  suma: '', data_limita: '', are_chitanta: false, semnatar1_id: '', semnatar2_id: '',
+  suma: '', data_limita: '', are_chitanta: false, semnatar1_id: '', semnatar2_id: '', observatii: '',
 }
 
 export default function Sponsorizari() {
@@ -135,7 +135,7 @@ export default function Sponsorizari() {
       sponsor_cont: c.sponsor_cont || '', sponsor_banca: c.sponsor_banca || '',
       sponsor_reprezentant: c.sponsor_reprezentant || '', sponsor_ci_serie: c.sponsor_ci_serie || '',
       sponsor_ci_numar: c.sponsor_ci_numar || '', sponsor_cnp: c.sponsor_cnp || '',
-      sponsor_calitate: c.sponsor_calitate || '', suma: c.suma || '',
+      sponsor_calitate: c.sponsor_calitate || '', suma: c.suma || '', observatii: c.observatii || '',
       data_limita: c.data_limita || '', are_chitanta: !!c.are_chitanta,
       semnatar1_id: s1?.id || '', semnatar2_id: s2?.id || '',
       numar: c.numar, data_contract: c.data_contract,
@@ -152,6 +152,14 @@ export default function Sponsorizari() {
     if (error) return alert('Eroare: ' + error.message)
     if (preview?.id === c.id) setPreview(null)
     fetchAll()
+  }
+
+  async function salveazaObservatie(c, text) {
+    const val = text.trim()
+    if (val === (c.observatii || '')) return
+    const { error } = await supabase.from('sponsorizari').update({ observatii: val || null }).eq('id', c.id)
+    if (error) return alert('Eroare la salvarea notei: ' + error.message)
+    setSponsorizari(list => list.map(x => x.id === c.id ? { ...x, observatii: val } : x))
   }
 
   function anuleazaForm() {
@@ -172,7 +180,7 @@ export default function Sponsorizari() {
       sponsor_cont: form.sponsor_cont, sponsor_banca: form.sponsor_banca,
       sponsor_reprezentant: form.sponsor_reprezentant, sponsor_ci_serie: form.sponsor_ci_serie,
       sponsor_ci_numar: form.sponsor_ci_numar, sponsor_cnp: form.sponsor_cnp,
-      sponsor_calitate: form.sponsor_calitate, suma: parseFloat(form.suma),
+      sponsor_calitate: form.sponsor_calitate, suma: parseFloat(form.suma), observatii: form.observatii || null,
       data_limita: form.data_limita || null, are_chitanta: form.are_chitanta,
       semnatar1_nume: s1?.nume || null, semnatar1_functie: s1?.functie || null,
       semnatar2_nume: s2?.nume || null, semnatar2_functie: s2?.functie || null,
@@ -374,20 +382,6 @@ Cont: RO58RNCB0176160764990001 (BCR Pascani)${c.are_chitanta ? `\nChitanta: ${do
                 <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Calitate</label>
                 <input className="form-input" value={form.sponsor_calitate} onChange={e => upd('sponsor_calitate', e.target.value)} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">CI Seria</label>
-                  <input className="form-input" maxLength={2} value={form.sponsor_ci_serie} onChange={e => upd('sponsor_ci_serie', e.target.value.toUpperCase())} />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">CI Nr.</label>
-                  <input className="form-input" value={form.sponsor_ci_numar} onChange={e => upd('sponsor_ci_numar', e.target.value)} />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">CNP</label>
-                <input className="form-input font-mono" maxLength={13} value={form.sponsor_cnp} onChange={e => upd('sponsor_cnp', e.target.value)} />
-              </div>
             </div>
 
             <div className="text-xs font-bold uppercase tracking-widest text-green-700 border-b-2 border-green-100 pb-1.5 mb-4 mt-6">Sponsorizare</div>
@@ -419,6 +413,12 @@ Cont: RO58RNCB0176160764990001 (BCR Pascani)${c.are_chitanta ? `\nChitanta: ${do
                   {imputerniciti.filter(i => i.id !== form.semnatar1_id).map(i => <option key={i.id} value={i.id}>{i.nume} ({i.functie})</option>)}
                 </select>
               </div>
+            </div>
+
+            <div className="mt-6">
+              <label className="text-xs font-semibold uppercase tracking-wide text-gray-600 mb-1.5 block">Observații (notă internă)</label>
+              <textarea className="form-textarea" value={form.observatii || ''} onChange={e => upd('observatii', e.target.value)}
+                placeholder="Notă vizibilă doar în registru, nu apare pe contract..." />
             </div>
 
             <label className="flex items-center gap-3 p-4 mt-5 rounded-lg border-2 cursor-pointer"
@@ -466,27 +466,37 @@ Cont: RO58RNCB0176160764990001 (BCR Pascani)${c.are_chitanta ? `\nChitanta: ${do
                 </div>
                 <div className="doc-title">CONTRACT DE SPONSORIZARE</div>
 
-                <p><strong>{preview.sponsor_denumire}</strong>, cu sediul în {preview.sponsor_sediu || '__________'}, înregistrată la Registrul Comerțului sub nr. {preview.sponsor_reg_com || '__________'}, cod unic de înregistrare {preview.sponsor_cui || '__________'}, având contul nr. {preview.sponsor_cont || '__________'} deschis la {preview.sponsor_banca || '__________'}, reprezentată de către {preview.sponsor_reprezentant || '__________'}, legitimat cu CI seria {preview.sponsor_ci_serie || '__'} nr. {preview.sponsor_ci_numar || '______'}, CNP {preview.sponsor_cnp || '_____________'}, în calitate de {preview.sponsor_calitate || '__________'}, denumită în continuare <strong>Sponsor</strong>,</p>
+                <p><strong>{preview.sponsor_denumire}</strong>, cu sediul în {preview.sponsor_sediu || '__________'}, înregistrată la Registrul Comerțului sub nr. {preview.sponsor_reg_com || '__________'}, cod unic de înregistrare {preview.sponsor_cui || '__________'}, având contul nr. {preview.sponsor_cont || '__________'} deschis la {preview.sponsor_banca || '__________'}, reprezentată de către {preview.sponsor_reprezentant || '__________'}, în calitate de {preview.sponsor_calitate || '__________'}</p>
+                <p>&ndash; denumită în continuare <strong>Sponsor</strong>,</p>
                 <p>și</p>
-                <p><strong>ASOCIAȚIA SANSA 2010</strong>, cod fiscal 27772126, înregistrată în Registrul Asociațiilor și Fundațiilor de la Judecătoria Pașcani cu nr. 32/PJ/2010, cu sediul în Pașcani, str. Grădiniței nr. 22, bl. K4, ap. 15, cod poștal 705200, având contul nr. RO58RNCB0176160764990001 deschis la BCR Agenția Pașcani, reprezentată prin {preview.semnatar1_nume}, în calitate de {preview.semnatar1_functie}{preview.semnatar2_nume ? ` și prin ${preview.semnatar2_nume}, în calitate de ${preview.semnatar2_functie}` : ''}, denumită în continuare <strong>Beneficiar</strong>,</p>
-                <p>au convenit încheierea prezentului contract de sponsorizare, în condițiile Legii nr. 32/1994 privind sponsorizarea, cu modificările și completările ulterioare.</p>
+                <p><strong>ASOCIATIA SANSA 2010</strong>, cod fiscal 27772126, înregistrată în Registrul Asociațiilor și Fundațiilor Judecătoria Pașcani cu nr. 32/PJ/2010, sediul în Pașcani, str. Grădiniței, nr. 22, bl. K4, ap.15, cod poștal 705200, contul nr. RO58RNCB0176160764990001, deschis la BCR Agenția Pașcani, reprezentată legal prin {preview.semnatar1_nume}, în calitate de {preview.semnatar1_functie}{preview.semnatar2_nume ? ` și prin ${preview.semnatar2_nume}, în calitate de ${preview.semnatar2_functie}` : ''};</p>
+                <p>&ndash; denumit în continuare <strong>Beneficiar</strong>,</p>
+                <p>Sponsorul și Beneficiarul denumiți în continuare <strong>Părțile</strong></p>
 
-                <p className="doc-art">Art. 1. Obiectul contractului</p>
-                <p>Obiectul prezentului contract îl constituie sponsorizarea activităților de voluntariat și a proiectelor desfășurate de Beneficiar.</p>
+                <p className="doc-art">Art. 1. Obiectul Contractului</p>
+                <p>Obiectul prezentului contract îl constituie sponsorizarea activităților de voluntariat.</p>
 
                 <p className="doc-art">Art. 2. Obligațiile Sponsorului</p>
-                <p>Sponsorul se obligă să predea Beneficiarului suma de <strong>{fmt(preview.suma)} RON</strong> ({inLitere(preview.suma)} lei), până la data de <strong>{preview.data_limita ? dataRo(preview.data_limita) : '__________'}</strong>, prin virament bancar în contul indicat mai sus sau în numerar.</p>
+                <p>Sponsorul se obligă să predea până la data de {preview.data_limita ? dataRo(preview.data_limita) : '__________'} suma de <strong>{fmt(preview.suma)}</strong> Ron.</p>
 
                 <p className="doc-art">Art. 3. Obligațiile Beneficiarului</p>
-                <p>Beneficiarul se obligă să utilizeze resursele financiare primite exclusiv în scopul enunțat la Art. 1 și să aducă la cunoștința publicului sponsorizarea, în condițiile Legii nr. 32/1994.</p>
+                <p>Beneficiarul se obligă să utilizeze resursele financiare în scopul enunțat la Art 1.</p>
+                <p>Beneficiarul sponsorizării declară pe proprie răspundere că poate fi beneficiar al sponsorizării ce face obiectul prezentului contract, în condițiile Legii nr. 32/1994, cu modificările ulterioare și înțelege să suporte orice eventuale daune suferite de Sponsor în cazul în care se dovedește că nu putea beneficia de această sponsorizare.</p>
 
-                <p className="doc-art">Art. 4. Durata contractului</p>
-                <p>Prezentul contract intră în vigoare la data semnării de către ambele părți și își produce efectele până la îndeplinirea integrală a obligațiilor asumate.</p>
+                <p className="doc-art">Art. 4. Durata Contractului</p>
+                <p>Prezentul contract se încheie pe o durată de 30 de zile.</p>
 
                 <p className="doc-art">Art. 5. Dispoziții finale</p>
-                <p>Modificarea prezentului contract se face numai prin act adițional încheiat între părți. Litigiile decurgând din executarea prezentului contract se soluționează pe cale amiabilă, iar în caz contrar de către instanțele judecătorești competente.</p>
+                <p>(1) Modificările și completările ulterioare la prezentul contract necesită forma scrisă. Acest lucru se aplică și în cazul modificării cerinței enunțate anterior.</p>
+                <p>(2) Orice notificare trimisă de către o Parte contractantă celeilalte părți în baza prezentului contract va fi considerată a fi valabilă, dacă a fost făcută în scris, semnată și ștampilată corespunzător și trimisă celeilalte părți prin fax ori scrisoare recomandată cu confirmare de primire la adresele prevăzute în partea introductivă a acestui contract.</p>
+                <p>(3) Nerespectarea obligațiilor contractului este sancționată cu rezilierea contractului, restituirea sumei primite și plata de daune, în cuantum egal cu dobânda practicată de banca sponsorului. Rezilierea contractului se va face după un preaviz de 15 zile.</p>
+                <p>(4) Legea aplicabilă prezentului contract este legea română. Orice litigii se vor ivi între părți în legătură cu interpretarea clauzelor contractuale și/sau cu executarea contractului vor fi soluționate pe cale amiabilă. În cazul în care nu se ajunge la o înțelegere pe cale amiabilă, litigiile vor fi deduse spre judecată instanței române competente potrivit dreptului comun.</p>
+                <p>(5) Nici una din părți nu va fi răspunzătoare pentru neexecutarea la termen și/sau în mod corespunzător, total sau parțial, a oricăreia din obligațiile care îi incumbă în baza prezentului acord de parteneriat, dacă neexecutarea obligației respective a fost cauzată de un eveniment imprevizibil la data încheierii contractului și ale cărei consecințe sunt de neînlăturat sau extrem de costisitoare pentru partea care îl invocă. Sunt considerate asemenea evenimente: războiul, calamitățile naturale, temperaturi extrem de ridicate sau de scăzute, grevele, restricțiile legale și orice alt eveniment care este în afara controlului părții care îl invocă.</p>
+                <p>Partea care invocă evenimentul mai sus menționat este obligată să aducă la cunoștința celeilalte părți, imediat și în mod complet, producerea acestuia și să ia măsurile care îi stau la dispoziție în vederea limitării consecințelor respectivului eveniment.</p>
+                <p>(6) Beneficiarului îi este cunoscut faptul că Sponsorul nu încurajează și nu tolerează acordarea niciunor avantaje directe sau indirecte pentru atingerea obiectivelor contractuale. În cazul încălcării acestei obligații de către Beneficiar, Sponsorul este îndreptățit să rezilieze contractul fără nicio notificare. Beneficiarul este ținut răspunzător pentru toate consecințele ce rezultă din încălcarea acestei clauze.</p>
+                <p>(7) Părțile declară și garantează că: a) ființează și funcționează în mod legal; b) elementele de identificare ale părților sunt cele inserate în preambulul Contractului de Sponsorizare; c) nu există niciun impediment de natură juridică sau orice fel pentru încheierea și executarea prezentului Contract. Semnatarii prezentului Contract declară că au toate autorizațiile și/sau împuternicirile necesare în conformitate cu legea română și actele constitutive ale societăților pe care le reprezintă pentru semnarea prezentului Contract, iar persoanele semnatare au capacitatea de a angaja în mod valabil persoana juridică pe care o reprezintă.</p>
 
-                <p style={{ marginTop: 16 }}>Încheiat astăzi, <strong>{dataRo(preview.data_contract)}</strong>, în două (2) exemplare originale, câte unul pentru fiecare parte.</p>
+                <p style={{ marginTop: 16 }}>Prezentul contract a fost încheiat astăzi, <strong>{dataRo(preview.data_contract)}</strong>, în două (2) exemplare originale, în limba română.</p>
 
                 <div className="doc-sign">
                   <div>
@@ -563,7 +573,7 @@ Cont: RO58RNCB0176160764990001 (BCR Pascani)${c.are_chitanta ? `\nChitanta: ${do
             : (
               <div className="overflow-x-auto mt-3">
                 <table className="tbl" style={{ minWidth: 760 }}>
-                  <thead><tr><th>Serie / Nr.</th><th>Data</th><th>Sponsor</th><th>Suma</th><th>Semnatari</th><th>Chitanță</th><th></th></tr></thead>
+                  <thead><tr><th>Serie / Nr.</th><th>Data</th><th>Sponsor</th><th>Suma</th><th>Chitanță</th><th>Observații</th><th></th></tr></thead>
                   <tbody>
                     {sponsorizari.map(s => (
                       <tr key={s.id}>
@@ -571,8 +581,15 @@ Cont: RO58RNCB0176160764990001 (BCR Pascani)${c.are_chitanta ? `\nChitanta: ${do
                         <td className="text-sm text-gray-500">{new Date(s.data_contract).toLocaleDateString('ro-RO')}</td>
                         <td className="font-medium text-sm">{s.sponsor_denumire}</td>
                         <td className="font-semibold">{fmt(s.suma)} RON</td>
-                        <td className="text-xs text-gray-500">{s.semnatar1_nume}{s.semnatar2_nume ? ` + ${s.semnatar2_nume}` : ''}</td>
                         <td>{s.are_chitanta ? <Badge variant="gold">{serieCod(s.chitanta_prefix, s.serie_an)}/{nrDoc(s.chitanta_numar)}</Badge> : <Badge variant="gray">—</Badge>}</td>
+                        <td className="obs-cell">
+                          <input
+                            className="obs-input"
+                            defaultValue={s.observatii || ''}
+                            placeholder="adaugă notă..."
+                            onBlur={e => salveazaObservatie(s, e.target.value)}
+                          />
+                        </td>
                         <td>
                           <div className="flex gap-1.5">
                             <button className="btn btn-outline btn-sm" onClick={() => { setPreview(s); window.scrollTo(0, 0) }}>Deschide</button>

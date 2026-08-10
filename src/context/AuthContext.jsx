@@ -1,26 +1,47 @@
 import { createContext, useContext, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext({})
 
-const USERS = [
-  { email: 'asociatia.sansa2010@gmail.com', password: 'Sansa2010!', nume: 'Spiridon Mihaela-Iulia', rol: 'admin' },
-  { email: 'guest@sansa2010.ro', password: 'Guest2010!', nume: 'Utilizator Guest', rol: 'guest' },
+// Cont de rezerva — functioneaza si daca baza de date nu raspunde
+const FALLBACK = [
+  { email: 'asociatia.sansa2010@gmail.com', parola: 'Sansa2010!', nume: 'Spiridon Mihaela-Iulia', rol: 'admin' },
 ]
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem('sansa_user')) } 
+    try { return JSON.parse(sessionStorage.getItem('sansa_user')) }
     catch { return null }
   })
 
-  function signIn(email, password) {
-    const found = USERS.find(u => u.email === email && u.password === password)
-    if (found) {
-      const u = { email: found.email, nume: found.nume, rol: found.rol }
-      sessionStorage.setItem('sansa_user', JSON.stringify(u))
-      setUser(u)
-      return { data: { user: u }, error: null }
+  function aplica(u) {
+    const acc = { email: u.email, nume: u.nume, rol: u.rol }
+    sessionStorage.setItem('sansa_user', JSON.stringify(acc))
+    setUser(acc)
+    return { data: { user: acc }, error: null }
+  }
+
+  async function signIn(email, parola) {
+    const mail = String(email || '').trim().toLowerCase()
+
+    // 1) Utilizatori din baza de date
+    try {
+      const { data } = await supabase
+        .from('app_users')
+        .select('email,parola,nume,rol,activ')
+        .eq('email', mail)
+        .maybeSingle()
+
+      if (data && data.activ && data.parola === parola) return aplica(data)
+      if (data) return { data: null, error: { message: 'Email sau parolă incorecte.' } }
+    } catch {
+      // baza de date indisponibila — se incearca contul de rezerva
     }
+
+    // 2) Cont de rezerva
+    const f = FALLBACK.find(u => u.email === mail && u.parola === parola)
+    if (f) return aplica(f)
+
     return { data: null, error: { message: 'Email sau parolă incorecte.' } }
   }
 
