@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     ].filter(Boolean).join(', ')
 
     return res.status(200).json({
-      cui: g.cui ? `RO${g.cui}` : raw,
+      cui: g.cui ? String(g.cui) : String(cui),
       denumire: g.denumire || '',
       adresa: adresa || g.adresa || '',
       nrRegCom: g.nrRegCom || '',

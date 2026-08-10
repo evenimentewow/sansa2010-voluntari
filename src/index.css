@@ -195,3 +195,20 @@
   .mobile-topbar, .drawer, .drawer-overlay { display: none !important; }
   .app-shell { display: block; }
 }
+/* ===== Logo pe pagina de autentificare — la finalul src/index.css ===== */
+
+.login-logo {
+  width: 118px;
+  height: 118px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #fff;
+  padding: 6px;
+  box-shadow: 0 3px 16px rgba(26, 107, 74, .18);
+}
+
+@media (max-width: 900px) {
+  .login-logo { width: 96px; height: 96px; }
+}
