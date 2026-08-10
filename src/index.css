@@ -279,3 +279,21 @@
   .tbl td.obs-cell { display: block; text-align: left; }
   .obs-input { margin-top: 4px; }
 }
+/* ================================================================
+   FIX: butonul Administrare nu se mai suprapune peste antetul paginii
+   Se adauga la finalul src/index.css
+   ================================================================ */
+
+@media (min-width: 901px) {
+  /* Rezerva spatiu in dreapta antetului pentru butonul de administrare */
+  .app-main .bg-white.border-b.border-gray-200 {
+    padding-right: 190px !important;
+  }
+
+  /* Butonul se aliniaza pe aceeasi linie cu titlul paginii */
+  .admin-fab {
+    top: 16px;
+    right: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+}
