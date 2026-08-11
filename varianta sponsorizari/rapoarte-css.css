@@ -1,0 +1,21 @@
+/* ===== Rapoarte: selector perioada + separatoare — la finalul src/index.css ===== */
+
+.period-chip {
+  background: #fff; border: 1px solid #dde5e0; border-radius: 20px;
+  padding: 7px 14px; font-size: 13px; color: #4b5b54;
+  cursor: pointer; transition: all .15s; font-family: inherit;
+}
+.period-chip:hover { border-color: #1a6b4a; color: #1a6b4a; }
+.period-chip.active { background: #1a6b4a; border-color: #1a6b4a; color: #fff; font-weight: 500; }
+
+.rap-sectiune {
+  display: flex; align-items: center; gap: 9px;
+  font-family: 'DM Serif Display', Georgia, serif; font-size: 19px; color: #1a1f1c;
+  padding-bottom: 8px; border-bottom: 2px solid #e8f5ee;
+  margin-top: 10px;
+}
+
+@media (max-width: 900px) {
+  .period-chip { font-size: 12.5px; padding: 7px 12px; }
+  .rap-sectiune { font-size: 17px; }
+}
