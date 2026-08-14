@@ -87,7 +87,6 @@ export default function Rapoarte() {
   const totalSume   = spF.reduce((s, x) => s + Number(x.suma || 0), 0)
   const cuChitanta  = spF.filter(s => s.are_chitanta)
   const sumaChit    = cuChitanta.reduce((s, x) => s + Number(x.suma || 0), 0)
-  const mediaContr  = spF.length ? totalSume / spF.length : 0
 
   // Sponsorizari pe luni
   const peLuni = useMemo(() => {
@@ -143,9 +142,8 @@ export default function Rapoarte() {
     [],
     ['Indicator', 'Valoare'],
     ['Numar contracte', spF.length],
+    ['Numar chitante', cuChitanta.length],
     ['Suma totala RON', totalSume.toFixed(2)],
-    ['Suma medie / contract RON', mediaContr.toFixed(2)],
-    ['Contracte cu chitanta', cuChitanta.length],
     ['Suma incasata cu chitanta RON', sumaChit.toFixed(2)],
     [],
     ['Luna', 'Nr. contracte', 'Suma RON'],
@@ -223,10 +221,10 @@ export default function Rapoarte() {
         </div>
 
         <div className="grid grid-cols-4 gap-4">
-          <StatCard num={spF.length}                       label="Contracte emise"     color="gold" />
-          <StatCard num={`${fmt(totalSume)}`}              label="Suma totală (RON)"   color="green" />
-          <StatCard num={`${fmt(mediaContr)}`}             label="Medie / contract"    color="blue" />
-          <StatCard num={cuChitanta.length}                label="Cu chitanță emisă"   color="red" />
+          <StatCard num={spF.length}          label="Contracte emise"     color="gold" />
+          <StatCard num={cuChitanta.length}   label="Chitanțe emise"      color="blue" />
+          <StatCard num={fmt(totalSume)}      label="Suma totală (RON)"   color="green" />
+          <StatCard num={fmt(sumaChit)}       label="Încasat cu chitanță" color="red" />
         </div>
 
         {spF.length === 0 ? (
