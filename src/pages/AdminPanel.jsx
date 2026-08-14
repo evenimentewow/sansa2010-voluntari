@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
-import { X, Users, Hash, Trash2, Plus, Shield } from 'lucide-react'
+import { X, Users, Hash, Trash2, Plus, Shield, Database } from 'lucide-react'
+import Backup from './Backup'
 
 const AN = new Date().getFullYear()
 const serieCod = (prefix, an) => `${(prefix || '').toUpperCase()}${an || AN}`
@@ -96,10 +97,13 @@ export default function AdminPanel({ open, onClose }) {
           <button className={`admin-tab ${tab === 'serii' ? 'active' : ''}`} onClick={() => setTab('serii')}>
             <Hash size={14} /> Serii documente
           </button>
+          <button className={`admin-tab ${tab === 'backup' ? 'active' : ''}`} onClick={() => setTab('backup')}>
+            <Database size={14} /> Backup
+          </button>
         </div>
 
         <div className="admin-body">
-          {loading ? <p className="text-sm text-gray-400">Se încarcă...</p> : tab === 'useri' ? (
+          {tab === 'backup' ? <Backup /> : loading ? <p className="text-sm text-gray-400">Se încarcă...</p> : tab === 'useri' ? (
             <>
               <div className="p-4 rounded-lg border border-gray-200 mb-5">
                 <div className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: '#1a6b4a' }}>Utilizator nou</div>

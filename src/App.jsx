@@ -46,7 +46,7 @@ export default function App() {
             <Route path="contracte"    element={<ProtectedRoute adminOnly><Contracte /></ProtectedRoute>} />
             <Route path="activitati"   element={<ProtectedRoute adminOnly><Activitati /></ProtectedRoute>} />
             <Route path="pontaj"       element={<ProtectedRoute adminOnly><Pontaj /></ProtectedRoute>} />
-            <Route path="rapoarte"     element={<ProtectedRoute adminOnly><Rapoarte /></ProtectedRoute>} />
+            <Route path="rapoarte"     element={<Rapoarte />} />
             <Route path="sponsorizari" element={<Sponsorizari />} />
           </Route>
         </Routes>

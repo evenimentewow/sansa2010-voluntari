@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PageHeader, StatCard, Spinner } from '../components/ui'
+import { useAuth } from '../context/AuthContext'
 import { Download, CalendarRange, HandCoins, Users } from 'lucide-react'
 
 const fmt = n => new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2 }).format(n || 0)
@@ -35,6 +36,8 @@ function exportaCSV(nume, randuri) {
 }
 
 export default function Rapoarte() {
+  const { user } = useAuth()
+  const isGuest = user?.rol === 'guest'
   const [voluntari, setVoluntari] = useState([])
   const [activitati, setActivitati] = useState([])
   const [sponsorizari, setSponsorizari] = useState([])
@@ -49,14 +52,18 @@ export default function Rapoarte() {
   useEffect(() => { incarca() }, [])
 
   async function incarca() {
-    const [v, a, s, p] = await Promise.all([
-      supabase.from('voluntari').select('*').order('ore_totale', { ascending: false }),
-      supabase.from('activitati').select('*'),
-      supabase.from('sponsorizari').select('*').order('numar', { ascending: false }),
-      supabase.from('pontaj').select('*'),
-    ])
-    setVoluntari(v.data || []); setActivitati(a.data || [])
-    setSponsorizari(s.data || []); setPontaje(p.data || [])
+    const esteGuest = user?.rol === 'guest'
+    const s = await supabase.from('sponsorizari').select('*').order('numar', { ascending: false })
+    setSponsorizari(s.data || [])
+
+    if (!esteGuest) {
+      const [v, a, p] = await Promise.all([
+        supabase.from('voluntari').select('*').order('ore_totale', { ascending: false }),
+        supabase.from('activitati').select('*'),
+        supabase.from('pontaj').select('*'),
+      ])
+      setVoluntari(v.data || []); setActivitati(a.data || []); setPontaje(p.data || [])
+    }
     setLoading(false)
   }
 
@@ -290,6 +297,7 @@ export default function Rapoarte() {
         )}
 
         {/* ══ VOLUNTARI ══ */}
+        {!isGuest && <>
         <div className="rap-sectiune">
           <Users size={17} style={{ color: '#1a6b4a' }} />
           <span>Voluntari și activități</span>
@@ -345,6 +353,7 @@ export default function Rapoarte() {
             <button className="btn btn-outline gap-2" onClick={expActivitati}><Download size={14} /> Activități</button>
           </div>
         </div>
+        </>}
       </div>
     </>
   )

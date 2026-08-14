@@ -12,7 +12,7 @@ const navItems = [
   { to: '/contracte',    icon: FileText,         label: 'Contracte',      adminOnly: true },
   { to: '/activitati',   icon: CalendarDays,     label: 'Activități',     adminOnly: true },
   { to: '/pontaj',       icon: ClipboardCheck,   label: 'Pontaj',         adminOnly: true },
-  { to: '/rapoarte',     icon: BarChart3,        label: 'Rapoarte',       adminOnly: true },
+  { to: '/rapoarte',     icon: BarChart3,        label: 'Rapoarte',       adminOnly: false },
   { to: '/sponsorizari', icon: HandCoins,        label: 'Sponsorizări',   adminOnly: false },
 ]
 
