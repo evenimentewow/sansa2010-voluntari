@@ -53,13 +53,26 @@
 }
 
 /* ===== Alocare contracte de sponsorizare la proiect ===== */
-.aloc-total {
-  display: flex; align-items: baseline; justify-content: space-between;
-  padding: 12px 16px; margin-top: 16px;
+.aloc-calcul {
+  margin-top: 16px; padding: 14px 16px;
   background: #fdf6e3; border: 1px solid #e8dfa0; border-radius: 10px;
 }
-.aloc-total span { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #8a7a3a; font-weight: 600; }
-.aloc-total strong { font-family: 'DM Serif Display', Georgia, serif; font-size: 22px; color: #8a6d1a; }
+.aloc-linie {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+  padding: 5px 0; font-size: 13.5px; color: #6b6034;
+}
+.aloc-linie strong { font-weight: 600; white-space: nowrap; }
+.aloc-linie.minus { color: #9a7b3a; }
+.aloc-linie.final {
+  margin-top: 6px; padding-top: 11px; border-top: 1.5px solid #e0d38f;
+}
+.aloc-linie.final span {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+  color: #8a7a3a; font-weight: 600;
+}
+.aloc-linie.final strong {
+  font-family: 'DM Serif Display', Georgia, serif; font-size: 22px; color: #8a6d1a;
+}
 
 .aloc-lista { margin-top: 14px; max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; }
 .aloc-rand {
@@ -80,5 +93,5 @@
 @media (max-width: 900px) {
   .cerere-rand { flex-direction: column; align-items: stretch; }
   .cerere-rand .flex { justify-content: flex-start; }
-  .aloc-total strong { font-size: 19px; }
+  .aloc-linie.final strong { font-size: 19px; }
 }

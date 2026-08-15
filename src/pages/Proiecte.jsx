@@ -8,6 +8,9 @@ const fmt = n => new Intl.NumberFormat('ro-RO', { minimumFractionDigits: 2 }).fo
 const zi = d => d ? new Date(d).toLocaleDateString('ro-RO') : ''
 const azi = () => new Date().toISOString().slice(0, 10)
 
+// Cota retinuta de asociatie pentru cheltuieli forfetare
+const COTA_FORFETARA = 0.10
+
 const SURSE = [
   { val: 'banca', eticheta: 'Bancă', icon: Landmark },
   { val: 'cash',  eticheta: 'Cash',  icon: Banknote },
@@ -48,9 +51,15 @@ export default function Proiecte() {
   }
 
   // ── Buget din contracte de sponsorizare alocate ────────────────
-  const bugetProiect = (pid) => sponsorizari
+  // Sponsorizat = suma bruta a contractelor
+  // Forfetar    = 10% retinut de asociatie
+  // Buget       = ce ramane disponibil pentru proiect
+  const sponsorizatProiect = (pid) => sponsorizari
     .filter(s => s.proiect_id === pid)
     .reduce((t, s) => t + Number(s.suma || 0), 0)
+
+  const forfetarProiect = (pid) => sponsorizatProiect(pid) * COTA_FORFETARA
+  const bugetProiect    = (pid) => sponsorizatProiect(pid) * (1 - COTA_FORFETARA)
 
   async function comutaAlocare(contract, pid) {
     const nou = contract.proiect_id === pid ? null : pid
@@ -175,7 +184,9 @@ export default function Proiecte() {
   const total     = cheltProiect.reduce((s, c) => s + Number(c.suma || 0), 0)
   const totalBanca = cheltProiect.filter(c => c.sursa_fonduri === 'banca').reduce((s, c) => s + Number(c.suma || 0), 0)
   const totalCash  = cheltProiect.filter(c => c.sursa_fonduri === 'cash').reduce((s, c) => s + Number(c.suma || 0), 0)
-  const bugetDeschis = deschis ? bugetProiect(deschis.id) : 0
+  const brutDeschis     = deschis ? sponsorizatProiect(deschis.id) : 0
+  const forfetarDeschis = deschis ? forfetarProiect(deschis.id) : 0
+  const bugetDeschis    = deschis ? bugetProiect(deschis.id) : 0
   const ramas = deschis ? bugetDeschis - total : null
   const contracteDeschis = deschis ? sponsorizari.filter(s => s.proiect_id === deschis.id) : []
   const cereriProiect = deschis ? cereri.filter(c => c.proiect_id === deschis.id && c.status === 'in_asteptare') : []
@@ -196,8 +207,12 @@ export default function Proiecte() {
       ['', '', 'TOTAL GENERAL', '', '', total.toFixed(2)],
       ['', '', 'din care Bancă', '', '', totalBanca.toFixed(2)],
       ['', '', 'din care Cash', '', '', totalCash.toFixed(2)],
-      ['', '', 'Buget din sponsorizări', '', '', bugetDeschis.toFixed(2)],
-      ['', '', 'Disponibil', '', '', (ramas || 0).toFixed(2)],
+      [],
+      ['', '', 'Total sponsorizat', '', '', brutDeschis.toFixed(2)],
+      ['', '', 'Cheltuieli forfetare asociatie (10%)', '', '', (-forfetarDeschis).toFixed(2)],
+      ['', '', 'Buget disponibil proiect', '', '', bugetDeschis.toFixed(2)],
+      ['', '', 'Cheltuit', '', '', (-total).toFixed(2)],
+      ['', '', 'Disponibil ramas', '', '', (ramas || 0).toFixed(2)],
       [],
       ['Contracte de sponsorizare alocate:'],
       ['Serie/Nr.', 'Data', 'Sponsor', '', '', 'Suma RON'],
@@ -284,9 +299,19 @@ export default function Proiecte() {
               <button className="btn btn-outline btn-sm" onClick={() => setAlocare(null)}>✕ Închide</button>
             </div>
 
-            <div className="aloc-total">
-              <span>Buget rezultat</span>
-              <strong>{fmt(bugetProiect(alocare.id))} RON</strong>
+            <div className="aloc-calcul">
+              <div className="aloc-linie">
+                <span>Total contracte alocate</span>
+                <strong>{fmt(sponsorizatProiect(alocare.id))} RON</strong>
+              </div>
+              <div className="aloc-linie minus">
+                <span>Cheltuieli forfetare asociație (10%)</span>
+                <strong>− {fmt(forfetarProiect(alocare.id))} RON</strong>
+              </div>
+              <div className="aloc-linie final">
+                <span>Buget disponibil pentru proiect</span>
+                <strong>{fmt(bugetProiect(alocare.id))} RON</strong>
+              </div>
             </div>
 
             {sponsorizari.length === 0 ? (
@@ -327,6 +352,7 @@ export default function Proiecte() {
             {proiecte.map(p => {
               const ch = cheltuieli.filter(c => c.proiect_id === p.id)
               const t = ch.reduce((s, c) => s + Number(c.suma || 0), 0)
+              const brut = sponsorizatProiect(p.id)
               const bug = bugetProiect(p.id)
               const nrContracte = sponsorizari.filter(s => s.proiect_id === p.id).length
               const proc = bug ? Math.min(100, (t / bug) * 100) : null
@@ -350,7 +376,9 @@ export default function Proiecte() {
                     <div>
                       <div className="font-medium text-sm text-gray-600">din {fmt(bug)}</div>
                       <div className="text-xs text-gray-400">
-                        {nrContracte ? `${nrContracte} ${nrContracte === 1 ? 'contract alocat' : 'contracte alocate'}` : 'niciun contract alocat'}
+                        {nrContracte
+                          ? `buget net · ${fmt(brut)} sponsorizat`
+                          : 'niciun contract alocat'}
                       </div>
                     </div>
                   </div>
@@ -459,7 +487,7 @@ export default function Proiecte() {
           <div className="card no-print">
             <div className="card-title">Finanțare proiect</div>
             <p className="text-sm text-gray-400 mb-3">
-              {contracteDeschis.length} {contracteDeschis.length === 1 ? 'contract' : 'contracte'} de sponsorizare · total {fmt(bugetDeschis)} RON
+              {contracteDeschis.length} {contracteDeschis.length === 1 ? 'contract de sponsorizare' : 'contracte de sponsorizare'}
             </p>
             <div className="space-y-1.5">
               {contracteDeschis.map(c => (
@@ -473,6 +501,21 @@ export default function Proiecte() {
                   <strong className="whitespace-nowrap" style={{ color: '#c8a84b' }}>{fmt(c.suma)} RON</strong>
                 </div>
               ))}
+            </div>
+
+            <div className="aloc-calcul" style={{ marginTop: 14 }}>
+              <div className="aloc-linie">
+                <span>Total sponsorizat</span>
+                <strong>{fmt(brutDeschis)} RON</strong>
+              </div>
+              <div className="aloc-linie minus">
+                <span>Cheltuieli forfetare asociație (10%)</span>
+                <strong>− {fmt(forfetarDeschis)} RON</strong>
+              </div>
+              <div className="aloc-linie final">
+                <span>Buget disponibil pentru proiect</span>
+                <strong>{fmt(bugetDeschis)} RON</strong>
+              </div>
             </div>
           </div>
         )}

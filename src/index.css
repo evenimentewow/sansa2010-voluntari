@@ -373,6 +373,187 @@
 }
 
 /* ===== Alocare contracte de sponsorizare la proiect ===== */
+.aloc-calcul {
+  margin-top: 16px; padding: 14px 16px;
+  background: #fdf6e3; border: 1px solid #e8dfa0; border-radius: 10px;
+}
+.aloc-linie {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 14px;
+  padding: 5px 0; font-size: 13.5px; color: #6b6034;
+}
+.aloc-linie strong { font-weight: 600; white-space: nowrap; }
+.aloc-linie.minus { color: #9a7b3a; }
+.aloc-linie.final {
+  margin-top: 6px; padding-top: 11px; border-top: 1.5px solid #e0d38f;
+}
+.aloc-linie.final span {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .5px;
+  color: #8a7a3a; font-weight: 600;
+}
+.aloc-linie.final strong {
+  font-family: 'DM Serif Display', Georgia, serif; font-size: 22px; color: #8a6d1a;
+}
+
+.aloc-lista { margin-top: 14px; max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; }
+.aloc-rand {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 13px; border: 1.5px solid #e5e7eb; border-radius: 10px;
+  cursor: pointer; transition: all .15s; background: #fff;
+}
+.aloc-rand:hover { border-color: #c8a84b; background: #fffdf5; }
+.aloc-rand.active { border-color: #c8a84b; background: #fdf6e3; }
+.aloc-rand.ocupat { opacity: .62; }
+
+/* ===== Cereri de stergere ===== */
+.cerere-rand {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 12px 14px; border: 1px solid #fde68a; border-radius: 10px; background: #fffbeb;
+}
+
+@media (max-width: 900px) {
+  .cerere-rand { flex-direction: column; align-items: stretch; }
+  .cerere-rand .flex { justify-content: flex-start; }
+  .aloc-linie.final strong { font-size: 19px; }
+}
+/* ===== Proiecte și jurnal de cheltuieli — la finalul src/index.css ===== */
+
+.proiect-card { transition: box-shadow .18s, border-color .18s; }
+.proiect-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); border-color: #cfe2d8; }
+
+/* Selector sursa fonduri */
+.sursa-grup { display: flex; gap: 8px; }
+.sursa-btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 12px; border: 1.5px solid #dde5e0; border-radius: 9px;
+  background: #fff; color: #4b5b54; font-size: 13.5px; font-family: inherit;
+  cursor: pointer; transition: all .15s;
+}
+.sursa-btn:hover { border-color: #1a6b4a; color: #1a6b4a; }
+.sursa-btn.active { background: #1a6b4a; border-color: #1a6b4a; color: #fff; font-weight: 500; }
+
+/* Indicatori sinteza */
+.stat-mini {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 16px;
+}
+.stat-mini-num { font-family: 'DM Serif Display', Georgia, serif; font-size: 22px; color: #1a1f1c; line-height: 1.1; }
+.stat-mini-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #8a958f; margin-top: 4px; font-weight: 600; }
+
+/* Jurnal */
+.jurnal-antet {
+  text-align: center; font-family: Georgia, serif; font-size: 12.5px;
+  line-height: 1.5; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb;
+}
+.jurnal-tbl td { vertical-align: top; }
+.jurnal-total td { background: #f0fdf4; border-top: 2px solid #1a6b4a !important; font-size: 14px; }
+.jurnal-sub td { background: #fafbfa; font-size: 12.5px; color: #5b6b63; }
+
+.jurnal-semnaturi {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+  margin-top: 36px; font-size: 12px; font-family: Georgia, serif;
+}
+.jurnal-semnaturi .line {
+  margin-top: 32px; border-top: 1px solid #333; padding-top: 4px;
+  font-size: 10px; color: #666;
+}
+
+@media print {
+  @page { size: A4 landscape; margin: 14mm; }
+  .jurnal-tbl { font-size: 10.5pt; }
+  .jurnal-antet { font-size: 12pt; margin-bottom: 10px; }
+}
+
+@media (max-width: 900px) {
+  .grid.grid-cols-4:has(.stat-mini) { grid-template-columns: repeat(2, 1fr) !important; }
+  .stat-mini-num { font-size: 19px; }
+  .sursa-grup { flex-direction: column; }
+  .jurnal-semnaturi { grid-template-columns: 1fr; gap: 26px; }
+}
+
+/* ===== Alocare contracte de sponsorizare la proiect ===== */
+.aloc-total {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 12px 16px; margin-top: 16px;
+  background: #fdf6e3; border: 1px solid #e8dfa0; border-radius: 10px;
+}
+.aloc-total span { font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: #8a7a3a; font-weight: 600; }
+.aloc-total strong { font-family: 'DM Serif Display', Georgia, serif; font-size: 22px; color: #8a6d1a; }
+
+.aloc-lista { margin-top: 14px; max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 7px; }
+.aloc-rand {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 13px; border: 1.5px solid #e5e7eb; border-radius: 10px;
+  cursor: pointer; transition: all .15s; background: #fff;
+}
+.aloc-rand:hover { border-color: #c8a84b; background: #fffdf5; }
+.aloc-rand.active { border-color: #c8a84b; background: #fdf6e3; }
+.aloc-rand.ocupat { opacity: .62; }
+
+/* ===== Cereri de stergere ===== */
+.cerere-rand {
+  display: flex; align-items: center; justify-content: space-between; gap: 14px;
+  padding: 12px 14px; border: 1px solid #fde68a; border-radius: 10px; background: #fffbeb;
+}
+
+@media (max-width: 900px) {
+  .cerere-rand { flex-direction: column; align-items: stretch; }
+  .cerere-rand .flex { justify-content: flex-start; }
+  .aloc-total strong { font-size: 19px; }
+}
+/* ===== Proiecte și jurnal de cheltuieli — la finalul src/index.css ===== */
+
+.proiect-card { transition: box-shadow .18s, border-color .18s; }
+.proiect-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.07); border-color: #cfe2d8; }
+
+/* Selector sursa fonduri */
+.sursa-grup { display: flex; gap: 8px; }
+.sursa-btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 12px; border: 1.5px solid #dde5e0; border-radius: 9px;
+  background: #fff; color: #4b5b54; font-size: 13.5px; font-family: inherit;
+  cursor: pointer; transition: all .15s;
+}
+.sursa-btn:hover { border-color: #1a6b4a; color: #1a6b4a; }
+.sursa-btn.active { background: #1a6b4a; border-color: #1a6b4a; color: #fff; font-weight: 500; }
+
+/* Indicatori sinteza */
+.stat-mini {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 16px;
+}
+.stat-mini-num { font-family: 'DM Serif Display', Georgia, serif; font-size: 22px; color: #1a1f1c; line-height: 1.1; }
+.stat-mini-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #8a958f; margin-top: 4px; font-weight: 600; }
+
+/* Jurnal */
+.jurnal-antet {
+  text-align: center; font-family: Georgia, serif; font-size: 12.5px;
+  line-height: 1.5; padding-bottom: 10px; border-bottom: 1px solid #e5e7eb;
+}
+.jurnal-tbl td { vertical-align: top; }
+.jurnal-total td { background: #f0fdf4; border-top: 2px solid #1a6b4a !important; font-size: 14px; }
+.jurnal-sub td { background: #fafbfa; font-size: 12.5px; color: #5b6b63; }
+
+.jurnal-semnaturi {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 40px;
+  margin-top: 36px; font-size: 12px; font-family: Georgia, serif;
+}
+.jurnal-semnaturi .line {
+  margin-top: 32px; border-top: 1px solid #333; padding-top: 4px;
+  font-size: 10px; color: #666;
+}
+
+@media print {
+  @page { size: A4 landscape; margin: 14mm; }
+  .jurnal-tbl { font-size: 10.5pt; }
+  .jurnal-antet { font-size: 12pt; margin-bottom: 10px; }
+}
+
+@media (max-width: 900px) {
+  .grid.grid-cols-4:has(.stat-mini) { grid-template-columns: repeat(2, 1fr) !important; }
+  .stat-mini-num { font-size: 19px; }
+  .sursa-grup { flex-direction: column; }
+  .jurnal-semnaturi { grid-template-columns: 1fr; gap: 26px; }
+}
+
+/* ===== Alocare contracte de sponsorizare la proiect ===== */
 .aloc-total {
   display: flex; align-items: baseline; justify-content: space-between;
   padding: 12px 16px; margin-top: 16px;
