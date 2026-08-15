@@ -10,6 +10,7 @@ import Activitati from './pages/Activitati'
 import Pontaj from './pages/Pontaj'
 import Rapoarte from './pages/Rapoarte'
 import Sponsorizari from './pages/Sponsorizari'
+import Proiecte from './pages/Proiecte'
 import InrolarePublica from './pages/InrolarePublica'
 
 function ProtectedRoute({ children, adminOnly = false }) {
@@ -48,6 +49,7 @@ export default function App() {
             <Route path="pontaj"       element={<ProtectedRoute adminOnly><Pontaj /></ProtectedRoute>} />
             <Route path="rapoarte"     element={<Rapoarte />} />
             <Route path="sponsorizari" element={<Sponsorizari />} />
+            <Route path="proiecte"     element={<Proiecte />} />
           </Route>
         </Routes>
       </BrowserRouter>
