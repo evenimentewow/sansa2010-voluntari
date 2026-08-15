@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { emailInrolare, emailEchipaInrolare } from '../lib/email'
 import { CheckCircle } from 'lucide-react'
 
 const ROLURI = [
@@ -273,6 +274,13 @@ export default function InrolarePublica() {
         setError(error.code === '23505' ? 'Există deja un voluntar înregistrat cu acest CNP.' : 'Eroare la trimitere. Încearcă din nou.')
         setSaving(false); return
       }
+
+      // Notificari — nu blocheaza inrolarea daca esueaza
+      try {
+        if (payload.email) await emailInrolare(payload)
+        await emailEchipaInrolare(payload, 'asociatia.sansa2010@gmail.com')
+      } catch {}
+
       setDone(true)
       setSaving(false)
     }
