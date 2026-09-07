@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { emailInrolare, emailEchipaInrolare } from '../lib/email'
 import { CheckCircle } from 'lucide-react'
+import UploadDocument from '../components/UploadDocument'
 
 const ROLURI = [
   'coordonator echipă',
@@ -94,6 +95,10 @@ export default function InrolarePublica() {
 
     return (
       <div className="space-y-4">
+        <UploadDocument
+          onDate={d => setLocal(p => ({ ...p, ...d }))}
+          onDocument={d => setData(p => ({ ...p, ...d }))}
+        />
         <div className="text-xs font-bold uppercase tracking-widest text-green-700 border-b-2 border-green-100 pb-1.5 mt-2">Date conform act de identitate</div>
         <Field label="Nume și prenume" required>
           <input className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-green-600" value={local.nume || ''} onChange={e => upd1('nume', e.target.value)} placeholder="Ex: Ionescu Alexandra Maria" />
@@ -267,6 +272,10 @@ export default function InrolarePublica() {
         rol_dorit: finalData.rol_dorit || [],
         rol_altul: finalData.rol_altul,
         status: 'activ', ore_totale: 0,
+        document_url: finalData.document_url || null,
+        document_tip: finalData.document_tip || null,
+        acord_stocare: !!finalData.acord_stocare,
+        document_la: finalData.document_url ? new Date().toISOString() : null,
       }
 
       const { error } = await supabase.from('voluntari').insert(payload)
