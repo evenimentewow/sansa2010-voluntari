@@ -1,0 +1,28 @@
+/* ================================================================
+   CORECTIE TIPARIRE — se adauga la FINALUL fisierului src/index.css
+   (anuleaza regula landscape care afecta toate documentele)
+   ================================================================ */
+
+@media print {
+  @page { size: A4 portrait; margin: 15mm 14mm; }
+
+  html, body { background: #fff !important; }
+
+  .doc-page {
+    width: 100% !important; max-width: none !important;
+    min-height: auto !important;
+    padding: 0 !important; margin: 0 !important;
+    box-shadow: none !important; border: none !important;
+    font-size: 10.5pt !important; line-height: 1.42 !important;
+    color: #000 !important;
+  }
+  .doc-page p { text-align: justify; margin: 0 0 5px; orphans: 3; widows: 3; }
+  .doc-page ol, .doc-page ul { margin: 4px 0 8px 18px; }
+  .doc-page li { text-align: justify; margin-bottom: 3px; }
+
+  .doc-art, .cv-titlu-sectiune { page-break-after: avoid; }
+  .cv-semnaturi, .doc-sign, .jurnal-semnaturi { page-break-inside: avoid; }
+  table { page-break-inside: auto; }
+  tr { page-break-inside: avoid; }
+  thead { display: table-header-group; }
+}

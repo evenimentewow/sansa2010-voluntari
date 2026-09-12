@@ -152,29 +152,32 @@ Reprezentant: ${c.semnatar_nume}`
 
             <div id="print-area">
               <div className="doc-page">
-                {/* Antet */}
+                {/* Antet — doua coloane, ca in model */}
                 <div className="cv-antet">
                   <div className="cv-antet-st">
                     <strong>ASOCIAŢIA „ŞANSA 2010"</strong><br />
-                    CIF 27772126<br />
-                    Str. Grădiniţei, nr.22, bl. K4, et.4, ap.15<br />
-                    loc. Paşcani, jud. Iaşi, cod 705200
+                    <strong>CIF 27772126</strong><br />
+                    Str. Grădiniţei, nr.22, bl. K4, et.4,<br />
+                    Ap.15, loc. Paşcani,<br />
+                    Jud. Iaşi, cod 705200
                   </div>
                   <div className="cv-antet-dr">
-                    Date de contact:<br />
-                    asociatia.sansa2010@gmail.com<br />
+                    Date de contact: asociatia.sansa2010@gmail.com;<br />
                     tabaraimpreunapentrutineri@gmail.com<br />
-                    tel: 0723 276029
+                    Spiridon Mihaela-Iulia: mihaelaiulia.s@gmail.com,<br />
+                    tel: 0723276029
                   </div>
                 </div>
 
-                <div className="doc-nr" style={{ marginTop: 10 }}>
-                  Nr. <strong>{serieCod(p.serie_prefix, p.serie_an)}/{nrDoc(p.numar_int)}</strong> · {dataRo(p.created_at)}
+                <div className="cv-nr">
+                  Nr. <strong>{serieCod(p.serie_prefix, p.serie_an)}/{nrDoc(p.numar_int)}</strong> / {dataRo(p.created_at)}
                 </div>
 
-                <div className="doc-title">Contract de voluntariat</div>
+                <img src="/logo-sansa.png" alt="" className="cv-logo" />
 
-                <p className="doc-art">I. Părţile</p>
+                <div className="cv-titlu">Contract de voluntariat</div>
+
+                <p className="cv-titlu-sectiune">I. Părţile</p>
                 <p><strong>Art.1.</strong> Părţile prezentului contract sunt:</p>
                 <p>a. Asociaţia „ŞANSA 2010", CIF 27772126, cu sediu în mun. Paşcani, Str. Grădiniţei, nr.22, bl. K4, et.4, ap.15, Tel: 0723 276029, Email: asociatia.sansa2010@gmail.com, reprezentată prin: <strong>{p.semnatar_nume}</strong>, în calitate de {p.semnatar_functie}, denumită în continuare <strong>Asociaţia</strong></p>
                 <p>şi</p>
@@ -187,15 +190,15 @@ Reprezentant: ${c.semnatar_nume}`
                   </>
                 )}
 
-                <p className="doc-art">II. Obiectul contractului</p>
+                <p className="cv-titlu-sectiune">II. OBIECTUL CONTRACTULUI</p>
                 <p>2.1. Obiectul contractului îl constituie participarea la activităţile și proiectele Asociaţiei, în care este implicat voluntarul.</p>
                 <p>2.2. În executarea contractului de voluntariat, voluntarul se subordonează coordonatorului proiectelor şi activităţilor Asociației şi reprezentantului acesteia, conform Art. 16 din Legea 78/2014 privind reglementarea activităţii de voluntariat din România.</p>
 
-                <p className="doc-art">III. Durata contractului</p>
+                <p className="cv-titlu-sectiune">III. DURATA CONTRACTULUI</p>
                 <p><strong>Art. 3.</strong> Contractul este încheiat pentru o perioadă nedeterminată. Acesta poate fi reziliat de către Asociaţie pe baza unor motive întemeiate, care încalcă regulamentul de organizare sau care denaturează imaginea Asociaţiei.</p>
 
-                <p className="doc-art">IV. Drepturile şi obligaţiile părţilor</p>
-                <p><strong>Art. 4. Drepturile voluntarului:</strong></p>
+                <p className="cv-titlu-sectiune">IV. DREPTURILE ŞI OBLIGAŢIILE PĂRŢILOR</p>
+                <p className="cv-art"><em>Art. 4. Drepturile voluntarului:</em></p>
                 <ol className="cv-lista" type="a">
                   <li>Dreptul de a fi tratat ca şi coleg cu drepturi egale atât de către conducerea asociaţiei cât şi de către eventuali angajaţi;</li>
                   <li>Dreptul de a fi respectat ca persoană, fără deosebire de rasă, etnie, sex sau orientare sexuală, convingeri politice sau religioase, abilitate fizică/psihică, nivel de educaţie, stare civilă, situaţie economică sau orice alte asemenea criterii;</li>
@@ -216,7 +219,7 @@ Reprezentant: ${c.semnatar_nume}`
 
                 <p><strong>Art. 5.</strong> Aceste drepturi constituie obligaţiile Asociaţiei. Alte obligaţii ale Asociaţiei sunt: organizarea de întâlniri/ședințe de orientare a voluntarilor; punerea la dispoziţia voluntarului a unei fişe a postului clare (titlul postului, scopul şi durata, sarcinile de îndeplinit, programul de lucru, persoana căreia i se subordonează, modalităţile de raportare, accesul la echipamente); desemnarea unei persoane care să supervizeze activitatea voluntarului.</p>
 
-                <p><strong>Art. 6. Obligaţiile voluntarului:</strong></p>
+                <p className="cv-art"><em>Art. 6. Obligaţiile voluntarului:</em></p>
                 <ol className="cv-lista" type="a">
                   <li>Să presteze o activitate de interes public, fără remuneraţie;</li>
                   <li>Să anunţe în timp util orice schimbare survenită în derularea programului, cu minim 48 de ore înainte, precizând indisponibilitatea temporară de a presta activitatea de voluntariat (inclusiv întârzieri, absenţe);</li>
@@ -237,10 +240,10 @@ Reprezentant: ${c.semnatar_nume}`
 
                 <p><strong>Art. 7. Drepturile Asociaţiei:</strong> dreptul de a stabili organizarea şi funcţionarea activităţii de voluntariat; de a iniţia conţinutul fişei de voluntariat; de a exercita controlul asupra modului de implementare a fişei de voluntariat; de a constata abaterile voluntarului; de a solicita documente sau certificate de sănătate necesare desfășurării activităților; de a condiţiona participarea la activităţi prin asumarea unui angajament scris; de a utiliza datele personale ale voluntarului pentru îndeplinirea formalităților organizatorice și întocmirea materialelor foto/video din timpul activităţilor, exclusiv în scopul promovării proiectelor Asociaţiei şi al rapoartelor către instituţii publice şi private; de a pretinde şi încasa taxe şi cotizaţii necesare desfăşurării activităţilor.</p>
 
-                <p className="doc-art">V. Perioada de probă</p>
+                <p className="cv-titlu-sectiune">V. PERIOADA DE PROBĂ</p>
                 <p><strong>Art. 8.</strong> 8.1. Prezentul contract este supus unei perioade de probă pe o durată de 30 de zile de la încheierea sa. 8.2. În perioada de probă, părţile pot denunţa contractul cu preaviz de 15 zile.</p>
 
-                <p className="doc-art">VI. Răspunderea, renegocierea, rezilierea şi litigiile</p>
+                <p className="cv-titlu-sectiune">VI. RĂSPUNDEREA, RENEGOCIEREA, REZILIEREA ŞI LITIGIILE</p>
                 <p><strong>Art. 9.</strong> Răspunderea pentru neexecutarea sau pentru executarea necorespunzătoare a contractului de voluntariat este supusă regulilor prevăzute de Codul Civil.</p>
                 <p><strong>Art. 10.</strong> Renegocierea contractului se face în cazul apariţiei unei situaţii de natură să îngreuneze executarea obligaţiilor care revin voluntarului, la cererea scrisă a oricărei părţi, formulată în termen de 15 zile de la apariţia situaţiei.</p>
                 <p><strong>Art. 11.</strong> În cazul în care situaţia descrisă la articolul 10 face imposibilă executarea în continuare a contractului, acesta va fi reziliat de drept.</p>
@@ -248,7 +251,7 @@ Reprezentant: ${c.semnatar_nume}`
                 <p><strong>Art. 13.</strong> Litigiile izvorâte din încheierea, modificarea, executarea sau încetarea contractului sunt de competenţa instanţelor judecătoreşti, dacă părţile nu le pot rezolva pe cale amiabilă; acţiunile izvorâte din contractul de voluntariat sunt scutite de taxă de timbru.</p>
                 <p><strong>Art. 14.</strong> Răspunderea pentru neexecutarea sau executarea necorespunzătoare a contractului este supusă prevederilor Legii nr. 287/2009 privind Codul civil, republicată.</p>
 
-                <p className="doc-art">VII. Clauze finale</p>
+                <p className="cv-titlu-sectiune">VII. CLAUZE FINALE</p>
                 <p>15.1 Prezentul contract este însoțit de anexe (fișa de voluntariat și fișa de protecție a muncii), care fac parte integrantă din acest contract.</p>
                 <p>15.2 Prezentul contract se va încheia cu acordul părinţilor sau al reprezentanţilor legali, conform legislaţiei în vigoare.</p>
                 <p>15.3 Răspunderea pentru neexecutarea sau executarea necorespunzătoare a contractului este supusă prevederilor Legii nr. 287/2009 privind Codul civil, republicată.</p>
